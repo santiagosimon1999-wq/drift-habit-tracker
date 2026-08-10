@@ -273,12 +273,16 @@
   .card.good .streak-pill{background:var(--moss-dim);color:var(--moss);}
   .card.bad .streak-pill{background:var(--ember-dim);color:var(--ember);}
 
+  .hist-btn,
   .edit-btn,
   .del-btn{
     background:none;border:none;color:var(--bone-dim);
     cursor:pointer;font-size:15px;line-height:1;padding:4px;
     opacity:.5;transition:.15s;
   }
+  .hist-btn{font-size:13px;letter-spacing:.02em;font-family:'IBM Plex Mono',monospace;}
+  .hist-btn:hover,
+  .hist-btn.active{opacity:1;color:var(--gold);}
   .edit-btn:hover{opacity:1;color:var(--gold);}
   .del-btn:hover{opacity:1;color:var(--ember);}
 
@@ -369,7 +373,6 @@
     flex-direction:column;
     gap:8px;
   }
-  .progress-item{}
   .progress-meta{
     display:flex;
     justify-content:space-between;
@@ -404,6 +407,7 @@
   }
   .card.good .progress-fill{background:var(--moss);}
   .card.bad .progress-fill{background:var(--ember);}
+  .dash-fill{background:var(--gold);}
 
   .card-bottom{
     display:flex;
@@ -430,9 +434,166 @@
   .check-btn:hover{border-color:var(--gold);color:var(--gold);}
   .check-btn.done:hover{color:var(--void);}
 
+  /* History calendar panel */
+  .history-panel{
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px solid var(--hair);
+  }
+  .cal-nav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .cal-nav-btn{
+    background:var(--void-2);
+    border:1px solid var(--hair);
+    color:var(--bone-dim);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    width:32px;height:32px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:.15s;
+  }
+  .cal-nav-btn:hover{color:var(--gold);border-color:var(--gold);}
+  .cal-title{
+    font-family:'Fraunces',serif;
+    font-size:16px;
+    font-weight:500;
+    text-align:center;
+  }
+  .cal-grid{
+    display:grid;
+    grid-template-columns:repeat(7, 1fr);
+    gap:4px;
+  }
+  .cal-dow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9px;
+    letter-spacing:.06em;
+    color:var(--bone-dim);
+    text-align:center;
+    padding:4px 0 6px;
+  }
+  .cal-day{
+    aspect-ratio:1;
+    min-height:28px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:8px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--bone-dim);
+    background:transparent;
+  }
+  .cal-day.empty{visibility:hidden;}
+  .cal-day.today{
+    box-shadow:inset 0 0 0 1px var(--gold);
+    color:var(--bone);
+  }
+  .card.good .cal-day.logged{
+    background:var(--moss-dim);
+    color:var(--moss);
+    font-weight:600;
+  }
+  .card.bad .cal-day.logged{
+    background:var(--ember-dim);
+    color:var(--ember);
+    font-weight:600;
+  }
+  .card.good .cal-day.logged.today{
+    box-shadow:inset 0 0 0 1px rgba(127,163,123,0.7);
+  }
+  .card.bad .cal-day.logged.today{
+    box-shadow:inset 0 0 0 1px rgba(192,86,58,0.7);
+  }
+  .cal-note{
+    margin-top:10px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    color:var(--bone-dim);
+    letter-spacing:.04em;
+  }
+
+  /* Dashboard */
+  .dashboard{
+    margin-top:34px;
+    border:1px solid var(--hair);
+    border-radius:var(--radius);
+    background:var(--slate);
+    padding:20px 18px 16px;
+  }
+  .dashboard-title{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin-bottom:16px;
+  }
+  .dash-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:16px;
+  }
+  @media (max-width:720px){
+    .dash-grid{grid-template-columns:1fr;}
+  }
+  .dash-panel{
+    background:var(--void-2);
+    border:1px solid var(--hair);
+    border-radius:12px;
+    padding:14px;
+  }
+  .dash-panel h3{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--bone-dim);
+    margin-bottom:12px;
+  }
+  .dash-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:10px;
+    margin-bottom:8px;
+  }
+  .dash-row .k{
+    font-size:12px;
+    color:var(--bone-dim);
+  }
+  .dash-row .v{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    color:var(--bone);
+    font-weight:600;
+  }
+  .dash-bar-wrap{margin-top:10px;}
+  .dash-bar-wrap .progress-meta{margin-bottom:5px;}
+  .dash-consistent{
+    margin-top:4px;
+    font-family:'Fraunces',serif;
+    font-size:15px;
+    color:var(--bone);
+    line-height:1.3;
+  }
+  .dash-consistent-meta{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    color:var(--bone-dim);
+    margin-top:4px;
+    letter-spacing:.04em;
+  }
+
   /* Footer stats */
   .stats{
-    margin-top:38px;
+    margin-top:28px;
     border-top:1px solid var(--hair);
     padding-top:22px;
     display:flex;
@@ -455,12 +616,101 @@
     margin-top:40px;
     text-align:center;
   }
+  .backup-row{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .backup-btn{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.05em;
+    padding:9px 14px;
+    border-radius:8px;
+    border:1px solid var(--hair);
+    background:var(--slate-2);
+    color:var(--bone-dim);
+    cursor:pointer;
+    transition:.15s;
+  }
+  .backup-btn:hover{color:var(--gold);border-color:var(--gold);}
+  .backup-msg{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    margin-bottom:12px;
+    min-height:1em;
+  }
+  .backup-msg.error{color:var(--ember);}
+  .backup-msg.ok{color:var(--moss);}
   .reset-link{
     background:none;border:none;color:var(--bone-dim);
     font-family:'IBM Plex Mono',monospace;font-size:11px;
     text-decoration:underline;cursor:pointer;opacity:.6;
   }
   .reset-link:hover{opacity:1;color:var(--ember);}
+
+  /* Custom confirm modal */
+  .modal-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(10,12,16,0.72);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:1000;
+  }
+  .modal-backdrop[hidden]{display:none !important;}
+  .modal{
+    width:100%;
+    max-width:420px;
+    background:var(--slate);
+    border:1px solid var(--hair);
+    border-radius:var(--radius);
+    padding:22px 20px 18px;
+  }
+  .modal h2{
+    font-family:'Fraunces',serif;
+    font-size:22px;
+    font-weight:600;
+    margin-bottom:8px;
+  }
+  .modal p{
+    color:var(--bone-dim);
+    font-size:14px;
+    line-height:1.5;
+    margin-bottom:18px;
+  }
+  .modal-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .modal-cancel,
+  .modal-confirm{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.04em;
+    padding:9px 14px;
+    border-radius:8px;
+    cursor:pointer;
+    border:1px solid var(--hair);
+  }
+  .modal-cancel{
+    background:transparent;
+    color:var(--bone-dim);
+  }
+  .modal-cancel:hover{color:var(--bone);}
+  .modal-confirm{
+    background:var(--ember);
+    border-color:var(--ember);
+    color:var(--void);
+    font-weight:600;
+  }
+  .modal-confirm:hover{opacity:.9;}
 </style>
 </head>
 <body>
@@ -510,11 +760,30 @@
     </div>
   </div>
 
+  <div class="dashboard" id="dashboard" style="display:none;"></div>
+
   <div class="stats" id="stats" style="display:none;"></div>
 
   <footer class="reset-row">
+    <div class="backup-row">
+      <button type="button" class="backup-btn" id="exportBtn">Export Backup</button>
+      <button type="button" class="backup-btn" id="importBtn">Import Backup</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+    </div>
+    <div class="backup-msg" id="backupMsg"></div>
     <button class="reset-link" id="resetBtn">clear all data</button>
   </footer>
+</div>
+
+<div class="modal-backdrop" id="confirmModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h2 id="confirmTitle">Replace current data?</h2>
+    <p id="confirmBody">Importing a backup will replace all current habits and history. This cannot be undone.</p>
+    <div class="modal-actions">
+      <button type="button" class="modal-cancel" id="confirmCancel">CANCEL</button>
+      <button type="button" class="modal-confirm" id="confirmOk">REPLACE DATA</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -543,11 +812,18 @@ const QUOTES = [
 
 const DEFAULT_WEEKLY_GOAL = 7;
 const DEFAULT_MONTHLY_GOAL = 30;
+const BACKUP_VERSION = 1;
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DOW_LABELS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
 
 let habits = [];
 let selectedType = 'good';
 let dataReady = false;
 let editingId = null;
+let historyId = null;
+let historyCursor = null; // { year, month } month is 0-11
+let pendingImportHabits = null;
+let confirmResolver = null;
 
 const $ = (id) => document.getElementById(id);
 
@@ -619,6 +895,11 @@ function endOfCurrentMonth(){
   return new Date(now.getFullYear(), now.getMonth() + 1, 0, 12, 0, 0, 0);
 }
 
+/** Later of two dates (local noon copies). */
+function minDate(a, b){
+  return a.getTime() <= b.getTime() ? a : b;
+}
+
 /** Count successful logged calendar days in [start, end], each day once. */
 function countLoggedDays(h, startDate, endDate){
   if(!h || !h.log) return 0;
@@ -635,13 +916,19 @@ function countLoggedDays(h, startDate, endDate){
 }
 
 function weeklyProgress(h){
-  const done = countLoggedDays(h, startOfCurrentWeek(), endOfCurrentWeek());
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
+  const end = minDate(endOfCurrentWeek(), today); // don't count future days
+  const done = countLoggedDays(h, startOfCurrentWeek(), end);
   const goal = getWeeklyGoal(h);
   return { done, goal };
 }
 
 function monthlyProgress(h){
-  const done = countLoggedDays(h, startOfCurrentMonth(), endOfCurrentMonth());
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
+  const end = minDate(endOfCurrentMonth(), today); // don't count future days
+  const done = countLoggedDays(h, startOfCurrentMonth(), end);
   const goal = getMonthlyGoal(h);
   return { done, goal };
 }
@@ -651,16 +938,17 @@ function progressPct(done, goal){
   return Math.min(100, Math.round((done / goal) * 100));
 }
 
-/** Ensure existing habits without goals keep working; never wipe log/history. */
+/** Ensure existing habits without goals keep working; never wipe log/history or regenerate ids. */
 function normalizeHabit(h){
+  const log = (h && h.log && typeof h.log === 'object' && !Array.isArray(h.log)) ? h.log : {};
   return {
     ...h,
-    name: typeof h.name === 'string' ? h.name : '',
-    type: h.type === 'bad' ? 'bad' : 'good',
-    log: (h.log && typeof h.log === 'object') ? h.log : {},
-    createdAt: h.createdAt || todayStr(0),
-    weeklyGoal: h.weeklyGoal == null ? DEFAULT_WEEKLY_GOAL : getWeeklyGoal(h),
-    monthlyGoal: h.monthlyGoal == null ? DEFAULT_MONTHLY_GOAL : getMonthlyGoal(h)
+    name: typeof (h && h.name) === 'string' ? h.name : '',
+    type: h && h.type === 'bad' ? 'bad' : 'good',
+    log,
+    createdAt: (h && h.createdAt) || todayStr(0),
+    weeklyGoal: !h || h.weeklyGoal == null ? DEFAULT_WEEKLY_GOAL : getWeeklyGoal(h),
+    monthlyGoal: !h || h.monthlyGoal == null ? DEFAULT_MONTHLY_GOAL : getMonthlyGoal(h)
   };
 }
 
@@ -719,6 +1007,66 @@ function checkMilestone(h){
   return milestones.includes(s) ? s : null;
 }
 
+// ---------- Dashboard metrics ----------
+function aggregateProgress(progressFn){
+  let completions = 0;
+  let goalsMet = 0;
+  let target = 0;
+  let achieved = 0;
+  habits.forEach(h => {
+    const p = progressFn(h);
+    completions += p.done;
+    target += p.goal;
+    achieved += p.done;
+    if(p.done >= p.goal) goalsMet++;
+  });
+  const pct = progressPct(achieved, target);
+  return { completions, goalsMet, pct, target, achieved };
+}
+
+function mostConsistentThisMonth(){
+  if(habits.length === 0) return null;
+  let best = null;
+  habits.forEach(h => {
+    const p = monthlyProgress(h);
+    const pct = p.goal ? (p.done / p.goal) : 0;
+    const candidate = { habit: h, done: p.done, goal: p.goal, pct };
+    if(!best){
+      best = candidate;
+      return;
+    }
+    if(candidate.pct > best.pct ||
+       (candidate.pct === best.pct && candidate.done > best.done) ||
+       (candidate.pct === best.pct && candidate.done === best.done && candidate.habit.name.localeCompare(best.habit.name) < 0)){
+      best = candidate;
+    }
+  });
+  return best;
+}
+
+// ---------- Calendar helpers ----------
+function buildMonthCells(year, month){
+  const first = new Date(year, month, 1, 12, 0, 0, 0);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const sunBased = first.getDay(); // 0=Sun
+  const mondayOffset = sunBased === 0 ? 6 : sunBased - 1;
+  const cells = [];
+  for(let i = 0; i < mondayOffset; i++) cells.push(null);
+  for(let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while(cells.length % 7 !== 0) cells.push(null);
+  return cells;
+}
+
+function shiftHistoryMonth(delta){
+  if(!historyCursor) return;
+  let y = historyCursor.year;
+  let m = historyCursor.month + delta;
+  while(m < 0){ m += 12; y -= 1; }
+  while(m > 11){ m -= 12; y += 1; }
+  historyCursor = { year: y, month: m };
+  render();
+}
+
 // ---------- Rendering ----------
 function render(){
   const goodList = $('goodList');
@@ -741,10 +1089,11 @@ function render(){
     bad.forEach(h => badList.appendChild(renderCard(h)));
   }
 
+  renderDashboard();
   renderStats();
 }
 
-function renderProgressItem(label, done, goal){
+function renderProgressItem(label, done, goal, fillClass){
   const item = document.createElement('div');
   item.className = 'progress-item';
   const pct = progressPct(done, goal);
@@ -753,7 +1102,7 @@ function renderProgressItem(label, done, goal){
       <span class="progress-label">${label}</span>
       <span class="progress-count">${done} / ${goal}</span>
     </div>
-    <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div class="progress-track"><div class="progress-fill ${fillClass || ''}" style="width:${pct}%"></div></div>
   `;
   return item;
 }
@@ -772,6 +1121,7 @@ function renderCard(h){
   const wave = last14(h);
   const week = weeklyProgress(h);
   const month = monthlyProgress(h);
+  const historyOpen = historyId === h.id;
 
   const top = document.createElement('div');
   top.className = 'card-top';
@@ -779,10 +1129,12 @@ function renderCard(h){
     <div class="card-name">${escapeHtml(h.name)}</div>
     <div class="card-actions">
       <span class="streak-pill">${streak} day${streak===1?'':'s'}</span>
+      <button class="hist-btn${historyOpen ? ' active' : ''}" title="History" aria-label="History" aria-expanded="${historyOpen}">▣</button>
       <button class="edit-btn" title="Edit habit" aria-label="Edit habit">✎</button>
       <button class="del-btn" title="Delete habit" aria-label="Delete habit">✕</button>
     </div>
   `;
+  top.querySelector('.hist-btn').addEventListener('click', () => toggleHistory(h.id));
   top.querySelector('.edit-btn').addEventListener('click', () => editHabit(h.id));
   top.querySelector('.del-btn').addEventListener('click', () => deleteHabit(h.id));
   card.appendChild(top);
@@ -815,7 +1167,76 @@ function renderCard(h){
   bottom.appendChild(btn);
   card.appendChild(bottom);
 
+  if(historyOpen){
+    card.appendChild(renderHistoryPanel(h));
+  }
+
   return card;
+}
+
+function renderHistoryPanel(h){
+  if(!historyCursor){
+    const now = new Date();
+    historyCursor = { year: now.getFullYear(), month: now.getMonth() };
+  }
+
+  const { year, month } = historyCursor;
+  const today = todayStr(0);
+  const cells = buildMonthCells(year, month);
+  const loggedCount = countLoggedDays(
+    h,
+    new Date(year, month, 1, 12, 0, 0, 0),
+    new Date(year, month + 1, 0, 12, 0, 0, 0)
+  );
+
+  const panel = document.createElement('div');
+  panel.className = 'history-panel';
+
+  const nav = document.createElement('div');
+  nav.className = 'cal-nav';
+  nav.innerHTML = `
+    <button type="button" class="cal-nav-btn" aria-label="Previous month">‹</button>
+    <div class="cal-title">${MONTH_NAMES[month]} ${year}</div>
+    <button type="button" class="cal-nav-btn" aria-label="Next month">›</button>
+  `;
+  const navBtns = nav.querySelectorAll('.cal-nav-btn');
+  navBtns[0].addEventListener('click', () => shiftHistoryMonth(-1));
+  navBtns[1].addEventListener('click', () => shiftHistoryMonth(1));
+  panel.appendChild(nav);
+
+  const grid = document.createElement('div');
+  grid.className = 'cal-grid';
+  DOW_LABELS.forEach(label => {
+    const el = document.createElement('div');
+    el.className = 'cal-dow';
+    el.textContent = label;
+    grid.appendChild(el);
+  });
+
+  cells.forEach(day => {
+    const el = document.createElement('div');
+    if(day == null){
+      el.className = 'cal-day empty';
+      grid.appendChild(el);
+      return;
+    }
+    const date = new Date(year, month, day, 12, 0, 0, 0);
+    const key = localDateStr(date);
+    const logged = !!h.log[key];
+    const isToday = key === today;
+    el.className = 'cal-day' + (logged ? ' logged' : '') + (isToday ? ' today' : '');
+    el.textContent = String(day);
+    el.title = key + (logged ? ' · logged' : '');
+    grid.appendChild(el);
+  });
+  panel.appendChild(grid);
+
+  const note = document.createElement('div');
+  note.className = 'cal-note';
+  note.textContent = `${loggedCount} successful day${loggedCount === 1 ? '' : 's'} this month · view only`;
+  panel.appendChild(note);
+
+  return panel;
 }
 
 function renderCardEditor(h){
@@ -888,7 +1309,6 @@ function renderCardEditor(h){
   });
   form.appendChild(actions);
 
-  // Focus name after the card is in the DOM
   queueMicrotask(() => nameInput.focus());
 
   return form;
@@ -898,6 +1318,80 @@ function escapeHtml(s){
   const d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
+}
+
+function renderDashboard(){
+  const el = $('dashboard');
+  if(habits.length === 0){
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+  el.style.display = 'block';
+
+  const week = aggregateProgress(weeklyProgress);
+  const month = aggregateProgress(monthlyProgress);
+  const bestStreak = habits.reduce((m, h) => Math.max(m, currentStreak(h)), 0);
+  const consistent = mostConsistentThisMonth();
+
+  el.innerHTML = `
+    <div class="dashboard-title">Overview</div>
+    <div class="dash-grid">
+      <div class="dash-panel" id="dashWeek"></div>
+      <div class="dash-panel" id="dashMonth"></div>
+      <div class="dash-panel" id="dashConsistency"></div>
+    </div>
+  `;
+
+  const weekPanel = el.querySelector('#dashWeek');
+  weekPanel.innerHTML = `<h3>This Week</h3>`;
+  weekPanel.appendChild(dashRow('Completions', String(week.completions)));
+  weekPanel.appendChild(dashRow('Weekly goals', `${week.goalsMet}/${habits.length}`));
+  weekPanel.appendChild(dashRow('Completion', `${week.pct}%`));
+  const weekBar = document.createElement('div');
+  weekBar.className = 'dash-bar-wrap';
+  weekBar.appendChild(renderProgressItem('Toward weekly goals', week.achieved, week.target, 'dash-fill'));
+  weekPanel.appendChild(weekBar);
+
+  const monthPanel = el.querySelector('#dashMonth');
+  monthPanel.innerHTML = `<h3>This Month</h3>`;
+  monthPanel.appendChild(dashRow('Completions', String(month.completions)));
+  monthPanel.appendChild(dashRow('Monthly goals', `${month.goalsMet}/${habits.length}`));
+  monthPanel.appendChild(dashRow('Completion', `${month.pct}%`));
+  const monthBar = document.createElement('div');
+  monthBar.className = 'dash-bar-wrap';
+  monthBar.appendChild(renderProgressItem('Toward monthly goals', month.achieved, month.target, 'dash-fill'));
+  monthPanel.appendChild(monthBar);
+
+  const consPanel = el.querySelector('#dashConsistency');
+  consPanel.innerHTML = `<h3>Consistency</h3>`;
+  consPanel.appendChild(dashRow('Best active streak', `${bestStreak} day${bestStreak === 1 ? '' : 's'}`));
+  const label = document.createElement('div');
+  label.className = 'dash-row';
+  label.innerHTML = `<span class="k">Most consistent</span>`;
+  consPanel.appendChild(label);
+  if(consistent){
+    const name = document.createElement('div');
+    name.className = 'dash-consistent';
+    name.textContent = consistent.habit.name;
+    consPanel.appendChild(name);
+    const meta = document.createElement('div');
+    meta.className = 'dash-consistent-meta';
+    meta.textContent = `${consistent.done} / ${consistent.goal} this month · ${progressPct(consistent.done, consistent.goal)}%`;
+    consPanel.appendChild(meta);
+  } else {
+    const name = document.createElement('div');
+    name.className = 'dash-consistent';
+    name.textContent = '—';
+    consPanel.appendChild(name);
+  }
+}
+
+function dashRow(k, v){
+  const row = document.createElement('div');
+  row.className = 'dash-row';
+  row.innerHTML = `<span class="k">${escapeHtml(k)}</span><span class="v">${escapeHtml(v)}</span>`;
+  return row;
 }
 
 function renderStats(){
@@ -944,6 +1438,10 @@ async function toggleToday(id){
 
 async function deleteHabit(id){
   if(editingId === id) editingId = null;
+  if(historyId === id){
+    historyId = null;
+    historyCursor = null;
+  }
   habits = habits.filter(h => h.id !== id);
   render();
   await saveHabits();
@@ -952,6 +1450,10 @@ async function deleteHabit(id){
 function editHabit(id){
   const h = habits.find(x => x.id === id);
   if(!h) return;
+  if(historyId === id){
+    historyId = null;
+    historyCursor = null;
+  }
   editingId = id;
   render();
 }
@@ -974,23 +1476,41 @@ function saveEditedHabit(id, name, weeklyGoal, monthlyGoal){
   saveHabits();
 }
 
+function toggleHistory(id){
+  const h = habits.find(x => x.id === id);
+  if(!h) return;
+
+  if(historyId === id){
+    historyId = null;
+    historyCursor = null;
+    render();
+    return;
+  }
+
+  editingId = null;
+  historyId = id;
+  const now = new Date();
+  historyCursor = { year: now.getFullYear(), month: now.getMonth() };
+  render();
+}
+
 async function addHabit(){
   const input = $('habitInput');
   const name = input.value.trim();
   if(!name){
-    alert('Habit name cannot be blank.');
+    setBackupMsg('Habit name cannot be blank.', true);
     return;
   }
 
   const weeklyGoal = parseWeeklyGoal($('weeklyGoalInput').value);
   if(weeklyGoal === null){
-    alert('Weekly goal must be a whole number from 1 to 7.');
+    setBackupMsg('Weekly goal must be a whole number from 1 to 7.', true);
     return;
   }
 
   const monthlyGoal = parseMonthlyGoal($('monthlyGoalInput').value);
   if(monthlyGoal === null){
-    alert('Monthly goal must be a whole number from 1 to 31.');
+    setBackupMsg('Monthly goal must be a whole number from 1 to 31.', true);
     return;
   }
 
@@ -1006,8 +1526,147 @@ async function addHabit(){
   input.value = '';
   $('weeklyGoalInput').value = String(DEFAULT_WEEKLY_GOAL);
   $('monthlyGoalInput').value = String(DEFAULT_MONTHLY_GOAL);
+  setBackupMsg('');
   render();
   await saveHabits();
+}
+
+// ---------- Backup export / import ----------
+function setBackupMsg(text, isError){
+  const el = $('backupMsg');
+  el.textContent = text || '';
+  el.className = 'backup-msg' + (text ? (isError ? ' error' : ' ok') : '');
+}
+
+function exportBackup(){
+  const payload = {
+    version: BACKUP_VERSION,
+    exportedAt: new Date().toISOString(),
+    appName: 'Drift',
+    habits: habits.map(h => ({
+      id: h.id,
+      name: h.name,
+      type: h.type,
+      weeklyGoal: getWeeklyGoal(h),
+      monthlyGoal: getMonthlyGoal(h),
+      log: h.log || {},
+      createdAt: h.createdAt
+    }))
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `drift-backup-${todayStr(0)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  setBackupMsg('Backup exported.', false);
+}
+
+function isUsableHabit(raw){
+  if(!raw || typeof raw !== 'object') return false;
+  if(typeof raw.name !== 'string' || !raw.name.trim()) return false;
+  if(raw.type != null && raw.type !== 'good' && raw.type !== 'bad') return false;
+  if(raw.log != null && (typeof raw.log !== 'object' || Array.isArray(raw.log))) return false;
+  if(raw.id != null && typeof raw.id !== 'string') return false;
+  return true;
+}
+
+function parseBackupPayload(text){
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    throw new Error('File is not valid JSON.');
+  }
+
+  let list = null;
+  if(Array.isArray(data)){
+    list = data;
+  } else if(data && typeof data === 'object' && Array.isArray(data.habits)){
+    list = data.habits;
+  } else {
+    throw new Error('Backup must include a habits array.');
+  }
+
+  if(!list.every(isUsableHabit)){
+    throw new Error('One or more habits are missing usable id/name/type/log data.');
+  }
+
+  // Normalize without mutating until confirmed; preserve ids/logs
+  return list.map(h => {
+    const normalized = normalizeHabit({
+      id: (typeof h.id === 'string' && h.id) ? h.id : uid(),
+      name: h.name.trim(),
+      type: h.type === 'bad' ? 'bad' : 'good',
+      log: h.log || {},
+      createdAt: h.createdAt,
+      weeklyGoal: h.weeklyGoal,
+      monthlyGoal: h.monthlyGoal
+    });
+    return normalized;
+  });
+}
+
+function openConfirmModal(title, body){
+  return new Promise(resolve => {
+    confirmResolver = resolve;
+    $('confirmTitle').textContent = title;
+    $('confirmBody').textContent = body;
+    $('confirmModal').hidden = false;
+  });
+}
+
+function closeConfirmModal(result){
+  $('confirmModal').hidden = true;
+  const resolve = confirmResolver;
+  confirmResolver = null;
+  if(resolve) resolve(result);
+}
+
+async function handleImportFile(file){
+  if(!file) return;
+  setBackupMsg('');
+
+  let text;
+  try {
+    text = await file.text();
+  } catch (e) {
+    setBackupMsg('Could not read the selected file.', true);
+    return;
+  }
+
+  let imported;
+  try {
+    imported = parseBackupPayload(text);
+  } catch (e) {
+    setBackupMsg(e.message || 'Invalid backup file.', true);
+    return;
+  }
+
+  pendingImportHabits = imported;
+  const ok = await openConfirmModal(
+    'Replace current data?',
+    `Import ${imported.length} habit${imported.length === 1 ? '' : 's'} from this backup? This will replace all current habits and history.`
+  );
+
+  if(!ok){
+    pendingImportHabits = null;
+    setBackupMsg('Import cancelled. Your current data was not changed.', false);
+    return;
+  }
+
+  habits = pendingImportHabits;
+  pendingImportHabits = null;
+  editingId = null;
+  historyId = null;
+  historyCursor = null;
+  saveHabits();
+  render();
+  setBackupMsg(`Imported ${habits.length} habit${habits.length === 1 ? '' : 's'} successfully.`, false);
 }
 
 // ---------- Motivation banner ----------
@@ -1060,10 +1719,31 @@ async function init(){
 
   $('refreshQuote').addEventListener('click', showRandomQuote);
 
+  $('exportBtn').addEventListener('click', exportBackup);
+  $('importBtn').addEventListener('click', () => $('importFile').click());
+  $('importFile').addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    await handleImportFile(file);
+  });
+
+  $('confirmCancel').addEventListener('click', () => closeConfirmModal(false));
+  $('confirmOk').addEventListener('click', () => closeConfirmModal(true));
+  $('confirmModal').addEventListener('click', (e) => {
+    if(e.target === $('confirmModal')) closeConfirmModal(false);
+  });
+
   $('resetBtn').addEventListener('click', async () => {
-    if(!confirm('This will delete all your habits and history. Are you sure?')) return;
+    const ok = await openConfirmModal(
+      'Clear all data?',
+      'This will delete all your habits and history. This cannot be undone.'
+    );
+    if(!ok) return;
     habits = [];
     editingId = null;
+    historyId = null;
+    historyCursor = null;
+    setBackupMsg('');
     render();
     await saveHabits();
   });
