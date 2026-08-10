@@ -1,38 +1,655 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drift — Habit Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#12141a;
+    --void-2:#1a1d25;
+    --slate:#20232d;
+    --slate-2:#282c38;
+    --hair:#333747;
+    --bone:#e8e6de;
+    --bone-dim:#9a9aa0;
+    --moss:#7fa37b;
+    --moss-dim:#3f4f3d;
+    --ember:#c0563a;
+    --ember-dim:#4a2e26;
+    --gold:#d9a441;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(217,164,65,0.08), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, rgba(127,163,123,0.07), transparent 55%),
+      var(--void);
+    color:var(--bone);
+    font-family:'Inter',sans-serif;
+    min-height:100%;
+    padding:32px 20px 80px;
+  }
+  .wrap{max-width:960px;margin:0 auto;}
 
-    <title>Drift Habit Tracker</title>
+  /* Header */
+  header{margin-bottom:28px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--gold);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold);}
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:44px;
+    letter-spacing:-.01em;
+    line-height:1;
+  }
+  .sub{color:var(--bone-dim);font-size:15px;margin-top:8px;}
 
-    <link rel="stylesheet" href="style.css">
+  /* Motivation banner */
+  .banner{
+    margin-top:22px;
+    border:1px solid var(--hair);
+    background:linear-gradient(135deg, rgba(217,164,65,0.08), rgba(127,163,123,0.05));
+    border-radius:var(--radius);
+    padding:20px 22px;
+    display:flex;
+    align-items:center;
+    gap:18px;
+    position:relative;
+    overflow:hidden;
+  }
+  .banner::before{
+    content:"";
+    position:absolute;
+    left:-40px;top:-40px;
+    width:140px;height:140px;
+    background:radial-gradient(circle, rgba(217,164,65,0.18), transparent 70%);
+  }
+  .flame{
+    flex-shrink:0;
+    width:38px;height:38px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:22px;
+    z-index:1;
+  }
+  .banner-text{flex:1;z-index:1;}
+  .banner-quote{
+    font-family:'Fraunces',serif;
+    font-size:18px;
+    font-style:italic;
+    line-height:1.4;
+    color:var(--bone);
+  }
+  .banner-meta{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--bone-dim);
+    margin-top:6px;
+    letter-spacing:.04em;
+  }
+  .banner-refresh{
+    z-index:1;
+    flex-shrink:0;
+    background:var(--slate-2);
+    border:1px solid var(--hair);
+    color:var(--bone-dim);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.05em;
+    padding:9px 14px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:.15s;
+  }
+  .banner-refresh:hover{color:var(--gold);border-color:var(--gold);}
+
+  /* Add habit form */
+  .add-row{
+    margin-top:22px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .add-row input[type=text]{
+    flex:1;
+    min-width:200px;
+    background:var(--slate);
+    border:1px solid var(--hair);
+    border-radius:10px;
+    padding:13px 16px;
+    color:var(--bone);
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    outline:none;
+    transition:.15s;
+  }
+  .add-row input[type=text]:focus{border-color:var(--gold);}
+  .add-row input[type=text]::placeholder{color:var(--bone-dim);}
+  .type-toggle{
+    display:flex;
+    border:1px solid var(--hair);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .type-toggle button{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:.04em;
+    padding:0 16px;
+    background:var(--slate);
+    color:var(--bone-dim);
+    border:none;
+    cursor:pointer;
+    transition:.15s;
+  }
+  .type-toggle button.active[data-t="good"]{background:var(--moss-dim);color:var(--moss);}
+  .type-toggle button.active[data-t="bad"]{background:var(--ember-dim);color:var(--ember);}
+  .add-btn{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:.05em;
+    background:var(--gold);
+    color:var(--void);
+    border:none;
+    border-radius:10px;
+    padding:0 20px;
+    cursor:pointer;
+    font-weight:600;
+    transition:.15s;
+  }
+  .add-btn:hover{opacity:.88;}
+
+  /* Columns */
+  .columns{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:22px;
+    margin-top:34px;
+  }
+  @media (max-width:720px){ .columns{grid-template-columns:1fr;} }
+
+  .col-title{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    margin-bottom:14px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .col-title.good{color:var(--moss);}
+  .col-title.bad{color:var(--ember);}
+  .col-title .arrow{font-size:14px;}
+
+  .empty{
+    border:1px dashed var(--hair);
+    border-radius:var(--radius);
+    padding:26px 18px;
+    text-align:center;
+    color:var(--bone-dim);
+    font-size:13px;
+    line-height:1.6;
+  }
+
+  /* Habit card */
+  .card{
+    background:var(--slate);
+    border:1px solid var(--hair);
+    border-radius:var(--radius);
+    padding:18px 18px 16px;
+    margin-bottom:14px;
+    transition:.15s;
+  }
+  .card.good{border-left:3px solid var(--moss);}
+  .card.bad{border-left:3px solid var(--ember);}
+
+  .card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .card-name{font-size:15.5px;font-weight:600;line-height:1.3;}
+  .card-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+
+  .streak-pill{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    padding:4px 9px;
+    border-radius:20px;
+    white-space:nowrap;
+  }
+  .card.good .streak-pill{background:var(--moss-dim);color:var(--moss);}
+  .card.bad .streak-pill{background:var(--ember-dim);color:var(--ember);}
+
+  .del-btn{
+    background:none;border:none;color:var(--bone-dim);
+    cursor:pointer;font-size:15px;line-height:1;padding:4px;
+    opacity:.5;transition:.15s;
+  }
+  .del-btn:hover{opacity:1;color:var(--ember);}
+
+  /* wave / last-14 */
+  .wave{
+    display:flex;
+    align-items:flex-end;
+    gap:3px;
+    height:26px;
+    margin-top:14px;
+  }
+  .wave .tick{
+    flex:1;
+    border-radius:2px;
+    background:var(--hair);
+    height:6px;
+    transition:height .2s;
+  }
+  .card.good .wave .tick.on{background:var(--moss);}
+  .card.bad .wave .tick.on{background:var(--ember);}
+
+  .card-bottom{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:14px;
+  }
+  .wave-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--bone-dim);letter-spacing:.04em;}
+
+  .check-btn{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:.03em;
+    padding:8px 14px;
+    border-radius:9px;
+    border:1px solid var(--hair);
+    background:transparent;
+    color:var(--bone-dim);
+    cursor:pointer;
+    transition:.15s;
+  }
+  .card.good .check-btn.done{background:var(--moss);border-color:var(--moss);color:var(--void);font-weight:600;}
+  .card.bad .check-btn.done{background:var(--ember);border-color:var(--ember);color:var(--void);font-weight:600;}
+  .check-btn:hover{border-color:var(--gold);color:var(--gold);}
+  .check-btn.done:hover{color:var(--void);}
+
+  /* Footer stats */
+  .stats{
+    margin-top:38px;
+    border-top:1px solid var(--hair);
+    padding-top:22px;
+    display:flex;
+    gap:32px;
+    flex-wrap:wrap;
+  }
+  .stat{font-family:'IBM Plex Mono',monospace;}
+  .stat .num{font-size:26px;color:var(--gold);font-weight:600;}
+  .stat .lbl{font-size:11px;color:var(--bone-dim);letter-spacing:.06em;text-transform:uppercase;margin-top:2px;}
+
+  .status-msg{
+    text-align:center;
+    color:var(--bone-dim);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    padding:40px 0;
+  }
+
+  footer.reset-row{
+    margin-top:40px;
+    text-align:center;
+  }
+  .reset-link{
+    background:none;border:none;color:var(--bone-dim);
+    font-family:'IBM Plex Mono',monospace;font-size:11px;
+    text-decoration:underline;cursor:pointer;opacity:.6;
+  }
+  .reset-link:hover{opacity:1;color:var(--ember);}
+</style>
 </head>
-
 <body>
-
+<div class="wrap" id="app">
+  <header>
+    <div class="eyebrow"><span class="dot"></span>DAILY LEDGER</div>
     <h1>Drift</h1>
+    <p class="sub">Build what you want more of. Break what you don't. One day at a time.</p>
 
-    <p>Build what you want more of. Break what you don't.</p>
+    <div class="banner">
+      <div class="flame" id="flameIcon">🔥</div>
+      <div class="banner-text">
+        <div class="banner-quote" id="quoteText">Loading today's nudge…</div>
+        <div class="banner-meta" id="quoteMeta"></div>
+      </div>
+      <button class="banner-refresh" id="refreshQuote">NEW ONE →</button>
+    </div>
 
-    <div class="habit-form">
+    <div class="add-row">
+      <input type="text" id="habitInput" placeholder="Add a habit — e.g. 'Read 10 pages' or 'No late-night scrolling'" maxlength="60">
+      <div class="type-toggle">
+        <button data-t="good" class="active" id="btnGood">BUILDING</button>
+        <button data-t="bad" id="btnBad">BREAKING</button>
+      </div>
+      <button class="add-btn" id="addBtn">ADD</button>
+    </div>
+  </header>
 
-    <label for="habit-input">New habit</label>
+  <div id="statusMsg" class="status-msg">Loading your habits…</div>
 
-    <input
-        id="habit-input"
-        type="text"
-        placeholder="e.g. Read 10 pages"
-    >
+  <div class="columns" id="columns" style="display:none;">
+    <div>
+      <div class="col-title good"><span class="arrow">↑</span> BUILDING</div>
+      <div id="goodList"></div>
+    </div>
+    <div>
+      <div class="col-title bad"><span class="arrow">↓</span> BREAKING</div>
+      <div id="badList"></div>
+    </div>
+  </div>
 
-    <button id="add-habit-button" type="button">
-        Add Habit
-    </button>
+  <div class="stats" id="stats" style="display:none;"></div>
 
+  <footer class="reset-row">
+    <button class="reset-link" id="resetBtn">clear all data</button>
+  </footer>
 </div>
 
-    <script src="script.js"></script>
-</body>
+<script>
+const QUOTES = [
+  "Progress is a whisper repeated daily, not a shout said once.",
+  "You don't rise to your goals, you fall to your systems.",
+  "The habit doesn't care how you feel about it today. Show up anyway.",
+  "Small and consistent beats big and occasional, every time.",
+  "Every day you don't quit is a day you're becoming who you want to be.",
+  "The bad habit doesn't disappear — it gets outcompeted. Keep starving it.",
+  "You're not starting over. You're continuing from wherever you are.",
+  "One rep, one page, one clean day. That's the whole job today.",
+  "Discipline is choosing between what you want now and what you want most.",
+  "The streak isn't the point. Who you're becoming is.",
+  "Motivation gets you started. The habit is what keeps you going.",
+  "You already know what to do. Today's task is just doing it.",
+  "Boring, repeated action wins. It always has.",
+  "Don't break the chain — even a small link holds.",
+  "The days you don't feel like it are the days that count most.",
+  "You're one decision away from a different day.",
+  "Cravings pass whether you feed them or not. Let this one pass.",
+  "Future you is built entirely out of what today-you decides.",
+  "Slip-ups aren't failures — stopping is. Get back on today.",
+  "Identity follows action. Act like who you're trying to become."
+];
 
+let habits = [];
+let selectedType = 'good';
+let dataReady = false;
+
+const $ = (id) => document.getElementById(id);
+
+function todayStr(offset=0){
+  const d = new Date();
+  d.setDate(d.getDate() - offset);
+  return d.toISOString().slice(0,10);
+}
+
+function uid(){ return 'h_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
+
+// ---------- Storage ----------
+function loadHabits() {
+  try {
+    const savedHabits = localStorage.getItem('drift-habits');
+
+    habits = savedHabits ? JSON.parse(savedHabits) : [];
+  } catch (e) {
+    console.error('Load failed', e);
+    habits = [];
+  }
+}
+
+function saveHabits() {
+  try {
+    localStorage.setItem('drift-habits', JSON.stringify(habits));
+  } catch (e) {
+    console.error('Save failed', e);
+
+    $('statusMsg').style.display = 'block';
+    $('statusMsg').textContent =
+      "Couldn't save — your last change may not persist.";
+
+    setTimeout(() => {
+      $('statusMsg').style.display = 'none';
+    }, 3000);
+  }
+}
+
+// ---------- Streak / wave logic ----------
+function currentStreak(h){
+  let streak = 0;
+  let offset = 0;
+  // if today not logged yet, start counting from yesterday
+  if(!h.log[todayStr(0)]) offset = 1;
+  while(h.log[todayStr(offset)]){
+    streak++;
+    offset++;
+  }
+  return streak;
+}
+
+function last14(h){
+  const arr = [];
+  for(let i=13;i>=0;i--){
+    arr.push(!!h.log[todayStr(i)]);
+  }
+  return arr;
+}
+
+function checkMilestone(h){
+  const s = currentStreak(h);
+  const milestones = [3,7,14,30,60,100];
+  return milestones.includes(s) ? s : null;
+}
+
+// ---------- Rendering ----------
+function render(){
+  const goodList = $('goodList');
+  const badList = $('badList');
+  goodList.innerHTML = '';
+  badList.innerHTML = '';
+
+  const good = habits.filter(h => h.type === 'good');
+  const bad = habits.filter(h => h.type === 'bad');
+
+  if(good.length === 0){
+    goodList.innerHTML = '<div class="empty">No habits yet. Add something you want to start doing.</div>';
+  } else {
+    good.forEach(h => goodList.appendChild(renderCard(h)));
+  }
+
+  if(bad.length === 0){
+    badList.innerHTML = '<div class="empty">No habits yet. Add something you want to quit.</div>';
+  } else {
+    bad.forEach(h => badList.appendChild(renderCard(h)));
+  }
+
+  renderStats();
+}
+
+function renderCard(h){
+  const card = document.createElement('div');
+  card.className = 'card ' + h.type;
+
+  const streak = currentStreak(h);
+  const doneToday = !!h.log[todayStr(0)];
+  const wave = last14(h);
+
+  const top = document.createElement('div');
+  top.className = 'card-top';
+  top.innerHTML = `
+    <div class="card-name">${escapeHtml(h.name)}</div>
+    <div class="card-actions">
+      <span class="streak-pill">${streak} day${streak===1?'':'s'}</span>
+      <button class="del-btn" title="Delete habit">✕</button>
+    </div>
+  `;
+  top.querySelector('.del-btn').addEventListener('click', () => deleteHabit(h.id));
+  card.appendChild(top);
+
+  const waveEl = document.createElement('div');
+  waveEl.className = 'wave';
+  wave.forEach(on => {
+    const t = document.createElement('div');
+    t.className = 'tick' + (on ? ' on' : '');
+    t.style.height = on ? '100%' : '20%';
+    waveEl.appendChild(t);
+  });
+  card.appendChild(waveEl);
+
+  const bottom = document.createElement('div');
+  bottom.className = 'card-bottom';
+  bottom.innerHTML = `<span class="wave-label">LAST 14 DAYS</span>`;
+  const btn = document.createElement('button');
+  btn.className = 'check-btn' + (doneToday ? ' done' : '');
+  btn.textContent = doneToday
+    ? (h.type === 'good' ? '✓ DONE TODAY' : '✓ STAYED CLEAN')
+    : (h.type === 'good' ? 'MARK DONE' : 'MARK CLEAN');
+  btn.addEventListener('click', () => toggleToday(h.id));
+  bottom.appendChild(btn);
+  card.appendChild(bottom);
+
+  return card;
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function renderStats(){
+  const statsEl = $('stats');
+  if(habits.length === 0){ statsEl.style.display = 'none'; return; }
+  statsEl.style.display = 'flex';
+
+  const totalHabits = habits.length;
+  const doneTodayCount = habits.filter(h => h.log[todayStr(0)]).length;
+  const longest = habits.reduce((m,h) => Math.max(m, currentStreak(h)), 0);
+
+  let weekHits = 0, weekPossible = 0;
+  habits.forEach(h => {
+    for(let i=0;i<7;i++){
+      weekPossible++;
+      if(h.log[todayStr(i)]) weekHits++;
+    }
+  });
+  const weekPct = weekPossible ? Math.round((weekHits/weekPossible)*100) : 0;
+
+  statsEl.innerHTML = `
+    <div class="stat"><div class="num">${doneTodayCount}/${totalHabits}</div><div class="lbl">Done today</div></div>
+    <div class="stat"><div class="num">${longest}</div><div class="lbl">Longest active streak</div></div>
+    <div class="stat"><div class="num">${weekPct}%</div><div class="lbl">This week</div></div>
+  `;
+}
+
+// ---------- Actions ----------
+async function toggleToday(id){
+  const h = habits.find(x => x.id === id);
+  if(!h) return;
+  const t = todayStr(0);
+  h.log[t] = !h.log[t];
+  render();
+  await saveHabits();
+
+  const milestone = checkMilestone(h);
+  if(milestone && h.log[t]){
+    showQuote(`${milestone}-day streak on "${h.name}" — that's momentum. Don't stop now.`, true);
+  }
+}
+
+async function deleteHabit(id){
+  habits = habits.filter(h => h.id !== id);
+  render();
+  await saveHabits();
+}
+
+async function addHabit(){
+  const input = $('habitInput');
+  const name = input.value.trim();
+  if(!name) return;
+  habits.push({ id: uid(), name, type: selectedType, log: {}, createdAt: todayStr(0) });
+  input.value = '';
+  render();
+  await saveHabits();
+}
+
+// ---------- Motivation banner ----------
+function dayIndexSeed(){
+  const d = new Date();
+  const start = new Date(d.getFullYear(), 0, 0);
+  const diff = d - start;
+  return Math.floor(diff / 86400000);
+}
+
+function showQuote(text, isMilestone){
+  $('quoteText').textContent = text;
+  $('flameIcon').textContent = isMilestone ? '⭐' : '🔥';
+  $('quoteMeta').textContent = isMilestone ? 'MILESTONE' : new Date().toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' });
+}
+
+function showTodaysQuote(){
+  const idx = dayIndexSeed() % QUOTES.length;
+  showQuote(QUOTES[idx], false);
+}
+
+function showRandomQuote(){
+  const idx = Math.floor(Math.random() * QUOTES.length);
+  showQuote(QUOTES[idx], false);
+}
+
+// ---------- Init ----------
+async function init(){
+  showTodaysQuote();
+
+  await loadHabits();
+  dataReady = true;
+  $('statusMsg').style.display = 'none';
+  $('columns').style.display = 'grid';
+  render();
+
+  $('addBtn').addEventListener('click', addHabit);
+  $('habitInput').addEventListener('keydown', e => { if(e.key === 'Enter') addHabit(); });
+
+  $('btnGood').addEventListener('click', () => {
+    selectedType = 'good';
+    $('btnGood').classList.add('active');
+    $('btnBad').classList.remove('active');
+  });
+  $('btnBad').addEventListener('click', () => {
+    selectedType = 'bad';
+    $('btnBad').classList.add('active');
+    $('btnGood').classList.remove('active');
+  });
+
+  $('refreshQuote').addEventListener('click', showRandomQuote);
+
+  $('resetBtn').addEventListener('click', async () => {
+    if(!confirm('This will delete all your habits and history. Are you sure?')) return;
+    habits = [];
+    render();
+    await saveHabits();
+  });
+}
+
+init();
+</script>
+</body>
 </html>
