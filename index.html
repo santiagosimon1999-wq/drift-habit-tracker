@@ -158,6 +158,42 @@
   }
   .type-toggle button.active[data-t="good"]{background:var(--moss-dim);color:var(--moss);}
   .type-toggle button.active[data-t="bad"]{background:var(--ember-dim);color:var(--ember);}
+  .goal-field{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:3px;
+    background:var(--slate);
+    border:1px solid var(--hair);
+    border-radius:10px;
+    padding:6px 10px 8px;
+    min-width:72px;
+  }
+  .goal-field span{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9px;
+    letter-spacing:.08em;
+    color:var(--bone-dim);
+    text-transform:uppercase;
+  }
+  .goal-field input[type=number]{
+    width:100%;
+    background:transparent;
+    border:none;
+    color:var(--bone);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:14px;
+    font-weight:600;
+    outline:none;
+    padding:0;
+    -moz-appearance:textfield;
+  }
+  .goal-field input[type=number]::-webkit-outer-spin-button,
+  .goal-field input[type=number]::-webkit-inner-spin-button{
+    -webkit-appearance:none;
+    margin:0;
+  }
+  .goal-field input[type=number]:focus{color:var(--gold);}
   .add-btn{
     font-family:'IBM Plex Mono',monospace;
     font-size:12px;
@@ -237,12 +273,76 @@
   .card.good .streak-pill{background:var(--moss-dim);color:var(--moss);}
   .card.bad .streak-pill{background:var(--ember-dim);color:var(--ember);}
 
+  .edit-btn,
   .del-btn{
     background:none;border:none;color:var(--bone-dim);
     cursor:pointer;font-size:15px;line-height:1;padding:4px;
     opacity:.5;transition:.15s;
   }
+  .edit-btn:hover{opacity:1;color:var(--gold);}
   .del-btn:hover{opacity:1;color:var(--ember);}
+
+  /* Inline habit edit */
+  .card-edit{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .card-edit input[type=text]{
+    width:100%;
+    background:var(--void-2);
+    border:1px solid var(--hair);
+    border-radius:8px;
+    padding:10px 12px;
+    color:var(--bone);
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    font-weight:600;
+    outline:none;
+  }
+  .card-edit input[type=text]:focus{border-color:var(--gold);}
+  .card-edit-goals{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    align-items:stretch;
+  }
+  .card-edit .goal-field{flex:1;min-width:72px;}
+  .card-edit-actions{
+    display:flex;
+    gap:8px;
+    justify-content:flex-end;
+    flex-wrap:wrap;
+  }
+  .card-edit-error{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--ember);
+    letter-spacing:.02em;
+  }
+  .edit-save,
+  .edit-cancel{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:.04em;
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    border:1px solid var(--hair);
+    transition:.15s;
+  }
+  .edit-save{
+    background:var(--gold);
+    border-color:var(--gold);
+    color:var(--void);
+    font-weight:600;
+  }
+  .edit-save:hover{opacity:.88;}
+  .edit-cancel{
+    background:transparent;
+    color:var(--bone-dim);
+  }
+  .edit-cancel:hover{color:var(--bone);border-color:var(--bone-dim);}
 
   /* wave / last-14 */
   .wave{
@@ -261,6 +361,49 @@
   }
   .card.good .wave .tick.on{background:var(--moss);}
   .card.bad .wave .tick.on{background:var(--ember);}
+
+  /* weekly / monthly progress */
+  .progress-block{
+    margin-top:12px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .progress-item{}
+  .progress-meta{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:4px;
+  }
+  .progress-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    color:var(--bone-dim);
+    letter-spacing:.06em;
+    text-transform:uppercase;
+  }
+  .progress-count{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--bone);
+    letter-spacing:.02em;
+  }
+  .progress-track{
+    height:4px;
+    background:var(--hair);
+    border-radius:2px;
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    border-radius:2px;
+    width:0%;
+    max-width:100%;
+    transition:width .2s ease;
+  }
+  .card.good .progress-fill{background:var(--moss);}
+  .card.bad .progress-fill{background:var(--ember);}
 
   .card-bottom{
     display:flex;
@@ -342,6 +485,14 @@
         <button data-t="good" class="active" id="btnGood">BUILDING</button>
         <button data-t="bad" id="btnBad">BREAKING</button>
       </div>
+      <label class="goal-field" title="Successful days per week (1–7)">
+        <span>Week</span>
+        <input type="number" id="weeklyGoalInput" min="1" max="7" value="7" inputmode="numeric">
+      </label>
+      <label class="goal-field" title="Successful days per month (1–31)">
+        <span>Month</span>
+        <input type="number" id="monthlyGoalInput" min="1" max="31" value="30" inputmode="numeric">
+      </label>
       <button class="add-btn" id="addBtn">ADD</button>
     </div>
   </header>
@@ -390,26 +541,135 @@ const QUOTES = [
   "Identity follows action. Act like who you're trying to become."
 ];
 
+const DEFAULT_WEEKLY_GOAL = 7;
+const DEFAULT_MONTHLY_GOAL = 30;
+
 let habits = [];
 let selectedType = 'good';
 let dataReady = false;
+let editingId = null;
 
 const $ = (id) => document.getElementById(id);
 
+/** Format a Date as local YYYY-MM-DD (never UTC / toISOString). */
+function localDateStr(date){
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Today's local calendar date, optionally shifted by whole days. */
 function todayStr(offset=0){
   const d = new Date();
+  d.setHours(12, 0, 0, 0); // noon avoids DST edge cases when shifting days
   d.setDate(d.getDate() - offset);
-  return d.toISOString().slice(0,10);
+  return localDateStr(d);
 }
 
 function uid(){ return 'h_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
+
+function getWeeklyGoal(h){
+  const g = Number(h && h.weeklyGoal);
+  if(Number.isInteger(g) && g >= 1 && g <= 7) return g;
+  return DEFAULT_WEEKLY_GOAL;
+}
+
+function getMonthlyGoal(h){
+  const g = Number(h && h.monthlyGoal);
+  if(Number.isInteger(g) && g >= 1 && g <= 31) return g;
+  return DEFAULT_MONTHLY_GOAL;
+}
+
+function parseWeeklyGoal(value){
+  const n = parseInt(String(value).trim(), 10);
+  if(!Number.isInteger(n) || n < 1 || n > 7) return null;
+  return n;
+}
+
+function parseMonthlyGoal(value){
+  const n = parseInt(String(value).trim(), 10);
+  if(!Number.isInteger(n) || n < 1 || n > 31) return null;
+  return n;
+}
+
+/** Monday (local) of the current week at noon. */
+function startOfCurrentWeek(){
+  const d = new Date();
+  d.setHours(12, 0, 0, 0);
+  const day = d.getDay(); // 0=Sun … 6=Sat
+  const mondayOffset = day === 0 ? 6 : day - 1;
+  d.setDate(d.getDate() - mondayOffset);
+  return d;
+}
+
+function endOfCurrentWeek(){
+  const d = startOfCurrentWeek();
+  d.setDate(d.getDate() + 6);
+  return d;
+}
+
+function startOfCurrentMonth(){
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1, 12, 0, 0, 0);
+}
+
+function endOfCurrentMonth(){
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 0, 12, 0, 0, 0);
+}
+
+/** Count successful logged calendar days in [start, end], each day once. */
+function countLoggedDays(h, startDate, endDate){
+  if(!h || !h.log) return 0;
+  let count = 0;
+  const d = new Date(startDate.getTime());
+  d.setHours(12, 0, 0, 0);
+  const end = new Date(endDate.getTime());
+  end.setHours(12, 0, 0, 0);
+  while(d <= end){
+    if(h.log[localDateStr(d)]) count++;
+    d.setDate(d.getDate() + 1);
+  }
+  return count;
+}
+
+function weeklyProgress(h){
+  const done = countLoggedDays(h, startOfCurrentWeek(), endOfCurrentWeek());
+  const goal = getWeeklyGoal(h);
+  return { done, goal };
+}
+
+function monthlyProgress(h){
+  const done = countLoggedDays(h, startOfCurrentMonth(), endOfCurrentMonth());
+  const goal = getMonthlyGoal(h);
+  return { done, goal };
+}
+
+function progressPct(done, goal){
+  if(!goal || goal <= 0) return 0;
+  return Math.min(100, Math.round((done / goal) * 100));
+}
+
+/** Ensure existing habits without goals keep working; never wipe log/history. */
+function normalizeHabit(h){
+  return {
+    ...h,
+    name: typeof h.name === 'string' ? h.name : '',
+    type: h.type === 'bad' ? 'bad' : 'good',
+    log: (h.log && typeof h.log === 'object') ? h.log : {},
+    createdAt: h.createdAt || todayStr(0),
+    weeklyGoal: h.weeklyGoal == null ? DEFAULT_WEEKLY_GOAL : getWeeklyGoal(h),
+    monthlyGoal: h.monthlyGoal == null ? DEFAULT_MONTHLY_GOAL : getMonthlyGoal(h)
+  };
+}
 
 // ---------- Storage ----------
 function loadHabits() {
   try {
     const savedHabits = localStorage.getItem('drift-habits');
-
-    habits = savedHabits ? JSON.parse(savedHabits) : [];
+    const parsed = savedHabits ? JSON.parse(savedHabits) : [];
+    habits = Array.isArray(parsed) ? parsed.map(normalizeHabit) : [];
   } catch (e) {
     console.error('Load failed', e);
     habits = [];
@@ -484,13 +744,34 @@ function render(){
   renderStats();
 }
 
+function renderProgressItem(label, done, goal){
+  const item = document.createElement('div');
+  item.className = 'progress-item';
+  const pct = progressPct(done, goal);
+  item.innerHTML = `
+    <div class="progress-meta">
+      <span class="progress-label">${label}</span>
+      <span class="progress-count">${done} / ${goal}</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+  `;
+  return item;
+}
+
 function renderCard(h){
   const card = document.createElement('div');
   card.className = 'card ' + h.type;
 
+  if(editingId === h.id){
+    card.appendChild(renderCardEditor(h));
+    return card;
+  }
+
   const streak = currentStreak(h);
   const doneToday = !!h.log[todayStr(0)];
   const wave = last14(h);
+  const week = weeklyProgress(h);
+  const month = monthlyProgress(h);
 
   const top = document.createElement('div');
   top.className = 'card-top';
@@ -498,9 +779,11 @@ function renderCard(h){
     <div class="card-name">${escapeHtml(h.name)}</div>
     <div class="card-actions">
       <span class="streak-pill">${streak} day${streak===1?'':'s'}</span>
-      <button class="del-btn" title="Delete habit">✕</button>
+      <button class="edit-btn" title="Edit habit" aria-label="Edit habit">✎</button>
+      <button class="del-btn" title="Delete habit" aria-label="Delete habit">✕</button>
     </div>
   `;
+  top.querySelector('.edit-btn').addEventListener('click', () => editHabit(h.id));
   top.querySelector('.del-btn').addEventListener('click', () => deleteHabit(h.id));
   card.appendChild(top);
 
@@ -513,6 +796,12 @@ function renderCard(h){
     waveEl.appendChild(t);
   });
   card.appendChild(waveEl);
+
+  const progress = document.createElement('div');
+  progress.className = 'progress-block';
+  progress.appendChild(renderProgressItem('Weekly', week.done, week.goal));
+  progress.appendChild(renderProgressItem('Monthly', month.done, month.goal));
+  card.appendChild(progress);
 
   const bottom = document.createElement('div');
   bottom.className = 'card-bottom';
@@ -527,6 +816,82 @@ function renderCard(h){
   card.appendChild(bottom);
 
   return card;
+}
+
+function renderCardEditor(h){
+  const form = document.createElement('div');
+  form.className = 'card-edit';
+
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.maxLength = 60;
+  nameInput.value = h.name;
+  nameInput.setAttribute('aria-label', 'Habit name');
+  form.appendChild(nameInput);
+
+  const goals = document.createElement('div');
+  goals.className = 'card-edit-goals';
+  goals.innerHTML = `
+    <label class="goal-field" title="Successful days per week (1–7)">
+      <span>Week</span>
+      <input type="number" class="edit-weekly" min="1" max="7" inputmode="numeric" aria-label="Weekly goal">
+    </label>
+    <label class="goal-field" title="Successful days per month (1–31)">
+      <span>Month</span>
+      <input type="number" class="edit-monthly" min="1" max="31" inputmode="numeric" aria-label="Monthly goal">
+    </label>
+  `;
+  const weeklyInput = goals.querySelector('.edit-weekly');
+  const monthlyInput = goals.querySelector('.edit-monthly');
+  weeklyInput.value = String(getWeeklyGoal(h));
+  monthlyInput.value = String(getMonthlyGoal(h));
+  form.appendChild(goals);
+
+  const errorEl = document.createElement('div');
+  errorEl.className = 'card-edit-error';
+  errorEl.style.display = 'none';
+  form.appendChild(errorEl);
+
+  const actions = document.createElement('div');
+  actions.className = 'card-edit-actions';
+  actions.innerHTML = `
+    <button type="button" class="edit-cancel">CANCEL</button>
+    <button type="button" class="edit-save">SAVE</button>
+  `;
+  actions.querySelector('.edit-cancel').addEventListener('click', cancelEditHabit);
+  actions.querySelector('.edit-save').addEventListener('click', () => {
+    const name = nameInput.value.trim();
+    if(!name){
+      errorEl.style.display = 'block';
+      errorEl.textContent = 'Habit name cannot be blank.';
+      nameInput.focus();
+      return;
+    }
+
+    const weeklyGoal = parseWeeklyGoal(weeklyInput.value);
+    if(weeklyGoal === null){
+      errorEl.style.display = 'block';
+      errorEl.textContent = 'Weekly goal must be a whole number from 1 to 7.';
+      weeklyInput.focus();
+      return;
+    }
+
+    const monthlyGoal = parseMonthlyGoal(monthlyInput.value);
+    if(monthlyGoal === null){
+      errorEl.style.display = 'block';
+      errorEl.textContent = 'Monthly goal must be a whole number from 1 to 31.';
+      monthlyInput.focus();
+      return;
+    }
+
+    saveEditedHabit(h.id, name, weeklyGoal, monthlyGoal);
+  });
+  form.appendChild(actions);
+
+  // Focus name after the card is in the DOM
+  queueMicrotask(() => nameInput.focus());
+
+  return form;
 }
 
 function escapeHtml(s){
@@ -544,19 +909,21 @@ function renderStats(){
   const doneTodayCount = habits.filter(h => h.log[todayStr(0)]).length;
   const longest = habits.reduce((m,h) => Math.max(m, currentStreak(h)), 0);
 
-  let weekHits = 0, weekPossible = 0;
-  habits.forEach(h => {
-    for(let i=0;i<7;i++){
-      weekPossible++;
-      if(h.log[todayStr(i)]) weekHits++;
-    }
-  });
-  const weekPct = weekPossible ? Math.round((weekHits/weekPossible)*100) : 0;
+  const weeklyMet = habits.filter(h => {
+    const p = weeklyProgress(h);
+    return p.done >= p.goal;
+  }).length;
+
+  const monthlyMet = habits.filter(h => {
+    const p = monthlyProgress(h);
+    return p.done >= p.goal;
+  }).length;
 
   statsEl.innerHTML = `
     <div class="stat"><div class="num">${doneTodayCount}/${totalHabits}</div><div class="lbl">Done today</div></div>
+    <div class="stat"><div class="num">${weeklyMet}/${totalHabits}</div><div class="lbl">Weekly goals</div></div>
+    <div class="stat"><div class="num">${monthlyMet}/${totalHabits}</div><div class="lbl">Monthly goals</div></div>
     <div class="stat"><div class="num">${longest}</div><div class="lbl">Longest active streak</div></div>
-    <div class="stat"><div class="num">${weekPct}%</div><div class="lbl">This week</div></div>
   `;
 }
 
@@ -576,17 +943,69 @@ async function toggleToday(id){
 }
 
 async function deleteHabit(id){
+  if(editingId === id) editingId = null;
   habits = habits.filter(h => h.id !== id);
   render();
   await saveHabits();
 }
 
+function editHabit(id){
+  const h = habits.find(x => x.id === id);
+  if(!h) return;
+  editingId = id;
+  render();
+}
+
+function cancelEditHabit(){
+  editingId = null;
+  render();
+}
+
+function saveEditedHabit(id, name, weeklyGoal, monthlyGoal){
+  const h = habits.find(x => x.id === id);
+  if(!h) return;
+
+  // Preserve log/history, streak data, createdAt, and Building/Breaking type
+  h.name = name;
+  h.weeklyGoal = weeklyGoal;
+  h.monthlyGoal = monthlyGoal;
+  editingId = null;
+  render();
+  saveHabits();
+}
+
 async function addHabit(){
   const input = $('habitInput');
   const name = input.value.trim();
-  if(!name) return;
-  habits.push({ id: uid(), name, type: selectedType, log: {}, createdAt: todayStr(0) });
+  if(!name){
+    alert('Habit name cannot be blank.');
+    return;
+  }
+
+  const weeklyGoal = parseWeeklyGoal($('weeklyGoalInput').value);
+  if(weeklyGoal === null){
+    alert('Weekly goal must be a whole number from 1 to 7.');
+    return;
+  }
+
+  const monthlyGoal = parseMonthlyGoal($('monthlyGoalInput').value);
+  if(monthlyGoal === null){
+    alert('Monthly goal must be a whole number from 1 to 31.');
+    return;
+  }
+
+  habits.push({
+    id: uid(),
+    name,
+    type: selectedType,
+    log: {},
+    createdAt: todayStr(0),
+    weeklyGoal,
+    monthlyGoal
+  });
   input.value = '';
+  $('weeklyGoalInput').value = String(DEFAULT_WEEKLY_GOAL);
+  $('monthlyGoalInput').value = String(DEFAULT_MONTHLY_GOAL);
   render();
   await saveHabits();
 }
@@ -644,6 +1063,7 @@ async function init(){
   $('resetBtn').addEventListener('click', async () => {
     if(!confirm('This will delete all your habits and history. Are you sure?')) return;
     habits = [];
+    editingId = null;
     render();
     await saveHabits();
   });
