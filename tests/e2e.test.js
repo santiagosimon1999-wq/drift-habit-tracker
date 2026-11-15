@@ -91,6 +91,17 @@ test('UI flows', { skip: !chromium && 'playwright not installed' }, async (t) =>
     assert.equal(await page.locator('.card').count(), 1);
   });
 
+  await t.test('week start toggle persists and reorders the calendar', async () => {
+    const { page } = await open();
+    await addHabit(page, 'Read');
+    await page.click('.hist-btn');
+    assert.equal(await page.locator('.cal-dow').first().textContent(), 'MON');
+    await page.click('#weekStartBtn');
+    assert.equal(await page.locator('.cal-dow').first().textContent(), 'SUN');
+    await page.reload();
+    assert.equal(await page.textContent('#weekStartBtn'), 'Week starts: Sunday');
+  });
+
   await t.test('theme button cycles and persists', async () => {
     const { page } = await open();
     assert.equal(await page.textContent('#themeBtn'), 'Theme: System');

@@ -94,6 +94,20 @@ test('normalizeHabit drops invalid log keys and falsy entries, keeps ids', () =>
   assert.equal(n.monthlyGoal, 30);
 });
 
+test('week start can be Sunday: weekly progress and calendar follow it', () => {
+  L.setWeekStart(0);
+  try {
+    // Wed 2026-11-18: the week runs Sun Nov 15 → Sat Nov 21
+    assert.equal(L.localDateStr(L.startOfCurrentWeek()), '2026-11-15');
+    assert.deepEqual(L.weeklyProgress(habit(['2026-11-15', '2026-11-16', '2026-11-14'])), { done: 2, goal: 7 });
+    const cells = L.buildMonthCells(2026, 10); // Nov 1 is a Sunday → no leading blanks
+    assert.equal(cells.indexOf(1), 0);
+    assert.equal(cells.length, 35);
+  } finally {
+    L.setWeekStart(1);
+  }
+});
+
 test('buildMonthCells pads to full Monday-first weeks', () => {
   const cells = L.buildMonthCells(2026, 10); // November 2026 starts on a Sunday
   assert.equal(cells.length % 7, 0);

@@ -31,7 +31,8 @@ const QUOTES = [
 
 const BACKUP_VERSION = 1;
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const DOW_LABELS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+const DOW_LABELS_MON = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+const DOW_LABELS_SUN = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
 
 let habits = [];
 let selectedType = 'good';
@@ -289,7 +290,7 @@ function renderHistoryPanel(h){
 
   const grid = document.createElement('div');
   grid.className = 'cal-grid';
-  DOW_LABELS.forEach(label => {
+  (getWeekStart() === 0 ? DOW_LABELS_SUN : DOW_LABELS_MON).forEach(label => {
     const el = document.createElement('div');
     el.className = 'cal-dow';
     el.textContent = label;
@@ -839,10 +840,29 @@ function cycleTheme(){
   applyTheme(next);
 }
 
+// =============================================================================
+// Week start (Monday / Sunday)
+// =============================================================================
+function loadWeekStart(){
+  try {
+    setWeekStart(localStorage.getItem('drift-week-start') === 'sun' ? 0 : 1);
+  } catch (e) { setWeekStart(1); }
+  $('weekStartBtn').textContent = 'Week starts: ' + (getWeekStart() === 0 ? 'Sunday' : 'Monday');
+}
+
+function toggleWeekStart(){
+  const next = getWeekStart() === 0 ? 'mon' : 'sun';
+  try { localStorage.setItem('drift-week-start', next); } catch (e) { /* setting just won't persist */ }
+  loadWeekStart();
+  render();
+}
+
 function init(){
   showTodaysQuote();
   applyTheme(getSavedTheme());
   $('themeBtn').addEventListener('click', cycleTheme);
+  loadWeekStart();
+  $('weekStartBtn').addEventListener('click', toggleWeekStart);
 
   loadHabits();
   $('statusMsg').hidden = true;

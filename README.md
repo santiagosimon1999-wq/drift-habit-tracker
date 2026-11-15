@@ -27,6 +27,7 @@ Drift is a responsive personal habit tracker built with vanilla HTML, CSS, and J
 - JSON backup import
 - Responsive layout for desktop and mobile
 - Installable PWA that works offline
+- Configurable first day of the week (Monday or Sunday)
 - Light / dark theme: follows your system, or pick one with the footer button
 - Keyboard- and screen-reader-friendly (labelled progress bars, accessible dialogs)
 
