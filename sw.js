@@ -2,7 +2,7 @@
  * Stale-while-revalidate: pages load instantly from cache and refresh in the background.
  * Bump CACHE_VERSION when changing the precache list.
  */
-const CACHE_VERSION = 'drift-v3';
+const CACHE_VERSION = 'drift-v4';
 const PRECACHE = [
   './',
   'index.html',
@@ -26,6 +26,16 @@ self.addEventListener('activate', (event) => {
     caches.keys()
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      const open = clients.find((c) => 'focus' in c);
+      return open ? open.focus() : self.clients.openWindow('./');
+    })
   );
 });
 

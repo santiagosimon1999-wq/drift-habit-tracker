@@ -108,6 +108,44 @@ test('week start can be Sunday: weekly progress and calendar follow it', () => {
   }
 });
 
+test('notes and status are sanitized and defaulted', () => {
+  const n = L.normalizeHabit({
+    name: 'X', status: 'weird',
+    notes: { '2026-11-01': '  felt great  ', '2026-11-02': '', 'bad': 'x', '2026-11-03': 5, '2026-11-04': 'y'.repeat(500) }
+  });
+  assert.equal(n.status, 'active');
+  assert.equal(n.notes['2026-11-01'], 'felt great');
+  assert.equal(Object.keys(n.notes).length, 2);
+  assert.equal(n.notes['2026-11-04'].length, 280);
+  assert.equal(L.normalizeHabit({ name: 'X', status: 'archived' }).status, 'archived');
+});
+
+test('trackedHabits excludes paused and archived habits', () => {
+  const list = ['active', 'paused', 'archived'].map(status => ({ ...habit([]), id: status, status }));
+  assert.deepEqual(L.trackedHabits(list).map(h => h.id), ['active']);
+});
+
+test('moveHabit swaps within the same type and skips archived habits', () => {
+  const mk = (id, type, status = 'active') => ({ id, type, status, log: {} });
+  const list = [mk('a', 'good'), mk('x', 'bad'), mk('b', 'good', 'archived'), mk('c', 'good')];
+  assert.deepEqual(L.moveHabit(list, 'c', -1).map(h => h.id), ['c', 'x', 'b', 'a']); // skips archived b
+  assert.deepEqual(L.moveHabit(list, 'a', -1), list); // already first
+  assert.deepEqual(L.moveHabit(list, 'c', 1), list);  // already last
+  assert.equal(L.moveHabit(list, 'x', 1), list);      // only bad habit
+});
+
+test('remindersDue respects time, enabled flag, once-per-day and completed habits', () => {
+  const list = [habit([]), { ...habit(['2026-11-18']), id: 'done' }, { ...habit([]), id: 'p', status: 'paused' }];
+  const at = (h, m) => new Date(2026, 10, 18, h, m);
+  const s = { enabled: true, time: '20:00', lastDay: null };
+  assert.equal(L.remindersDue(s, list, at(19, 59)), 0);
+  assert.equal(L.remindersDue(s, list, at(20, 0)), 1); // 'done' and paused are excluded
+  assert.equal(L.remindersDue({ ...s, lastDay: '2026-11-18' }, list, at(21, 0)), 0);
+  assert.equal(L.remindersDue({ ...s, enabled: false }, list, at(21, 0)), 0);
+  assert.equal(L.remindersDue({ ...s, time: 'bad' }, list, at(21, 0)), 0);
+  assert.equal(L.remindersDue(s, [{ ...habit(['2026-11-18']) }], at(21, 0)), 0);
+});
+
 test('buildMonthCells pads to full Monday-first weeks', () => {
   const cells = L.buildMonthCells(2026, 10); // November 2026 starts on a Sunday
   assert.equal(cells.length % 7, 0);

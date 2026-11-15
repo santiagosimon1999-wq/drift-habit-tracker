@@ -795,3 +795,47 @@ input[type=file]:focus-visible{
   .modal-confirm:hover{opacity:.9;}
 
   .theme-btn{margin-top:10px;}
+
+  /* Paused habits */
+  .card.paused{opacity:.6;}
+  .card.paused .check-btn{opacity:1;}
+
+  /* Organize row in the editor */
+  .card-edit-organize{display:flex;flex-wrap:wrap;gap:6px;}
+  .card-edit-organize button{
+    background:transparent;border:1px solid var(--hair);color:var(--bone-dim);
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.04em;
+    padding:6px 10px;border-radius:8px;cursor:pointer;
+  }
+  .card-edit-organize button:hover{color:var(--gold);border-color:var(--gold);}
+
+  /* Archived section */
+  .archived{margin-top:28px;}
+  .archived summary{
+    cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:12px;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--bone-dim);
+  }
+  .archived-row{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    padding:10px 0;border-bottom:1px solid var(--hair);
+  }
+  .archived-name{flex:1;min-width:140px;}
+  .archived-meta{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--bone-dim);}
+
+  /* Day notes in the history panel */
+  .history-note{margin-top:12px;display:flex;flex-direction:column;gap:6px;}
+  .note-label{
+    display:flex;align-items:center;gap:8px;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--bone-dim);letter-spacing:.04em;
+  }
+  .note-date,.note-text,.reminder-time{
+    background:var(--void-2);border:1px solid var(--hair);color:var(--bone);
+    border-radius:8px;padding:6px 8px;font-family:inherit;font-size:13px;
+  }
+  .note-text{width:100%;resize:vertical;}
+  .note-status{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--bone-dim);min-height:12px;}
+  .cal-day{position:relative;}
+  .cal-day.has-note::after{
+    content:'';position:absolute;right:4px;top:4px;width:5px;height:5px;border-radius:50%;background:var(--gold);
+  }
+  .reminder-time{margin-left:4px;}

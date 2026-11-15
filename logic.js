@@ -6,6 +6,8 @@
 const DEFAULT_WEEKLY_GOAL = 7;
 const DEFAULT_MONTHLY_GOAL = 30;
 const MAX_NAME_LENGTH = 60;
+const MAX_NOTE_LENGTH = 280;
+const HABIT_STATUSES = ['active', 'paused', 'archived'];
 const DATE_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 // =============================================================================
@@ -176,6 +178,18 @@ function sanitizeLog(log){
   return out;
 }
 
+/** Keep only notes attached to real dates, trimmed and length-limited. */
+function sanitizeNotes(notes){
+  const out = {};
+  if(!notes || typeof notes !== 'object' || Array.isArray(notes)) return out;
+  Object.keys(notes).forEach(key => {
+    if(!isValidDateKey(key) || typeof notes[key] !== 'string') return;
+    const text = notes[key].trim().slice(0, MAX_NOTE_LENGTH);
+    if(text) out[key] = text;
+  });
+  return out;
+}
+
 /** Ensure existing habits without goals keep working; never wipe log/history or regenerate ids. */
 function normalizeHabit(h){
   return {
@@ -183,6 +197,8 @@ function normalizeHabit(h){
     name: typeof (h && h.name) === 'string' ? h.name : '',
     type: h && h.type === 'bad' ? 'bad' : 'good',
     log: sanitizeLog(h && h.log),
+    notes: sanitizeNotes(h && h.notes),
+    status: h && HABIT_STATUSES.includes(h.status) ? h.status : 'active',
     createdAt: (h && isValidDateKey(h.createdAt)) ? h.createdAt : todayStr(0),
     weeklyGoal: !h || h.weeklyGoal == null ? DEFAULT_WEEKLY_GOAL : getWeeklyGoal(h),
     monthlyGoal: !h || h.monthlyGoal == null ? DEFAULT_MONTHLY_GOAL : getMonthlyGoal(h)
@@ -271,6 +287,44 @@ function last14(h){
 }
 
 // =============================================================================
+// Organizing habits (status, order) and reminders
+// =============================================================================
+
+/** Habits that count toward stats, streaks and reminders (not paused or archived). */
+function trackedHabits(list){
+  return list.filter(h => h.status !== 'paused' && h.status !== 'archived');
+}
+
+/**
+ * Move a habit up (-1) or down (+1) among habits of the same type that are
+ * still on the board (archived ones are skipped). Returns a new array.
+ */
+function moveHabit(list, id, dir){
+  const h = list.find(x => x.id === id);
+  if(!h) return list;
+  const group = list.filter(x => x.type === h.type && x.status !== 'archived');
+  const other = group[group.findIndex(x => x.id === id) + dir];
+  if(!other) return list;
+  const copy = list.slice();
+  copy[list.indexOf(h)] = other;
+  copy[list.indexOf(other)] = h;
+  return copy;
+}
+
+/**
+ * How many habits to remind about right now (0 = don't notify).
+ * settings: { enabled, time: 'HH:MM', lastDay: 'YYYY-MM-DD' | null }
+ */
+function remindersDue(settings, list, date){
+  if(!settings || !settings.enabled || !/^\d{2}:\d{2}$/.test(settings.time || '')) return 0;
+  const hhmm = String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0');
+  if(hhmm < settings.time) return 0;
+  if(settings.lastDay === localDateStr(date)) return 0;
+  const today = todayStr(0);
+  return trackedHabits(list).filter(h => !h.log[today]).length;
+}
+
+// =============================================================================
 // Calendar helpers
 // =============================================================================
 
@@ -331,6 +385,8 @@ function parseBackupPayload(text){
       name: h.name.trim().slice(0, MAX_NAME_LENGTH),
       type: h.type === 'bad' ? 'bad' : 'good',
       log: h.log || {},
+      notes: h.notes,
+      status: h.status,
       createdAt: h.createdAt,
       weeklyGoal: h.weeklyGoal,
       monthlyGoal: h.monthlyGoal
@@ -345,6 +401,7 @@ if(typeof module !== 'undefined' && module.exports){
     countLoggedDays, weeklyProgress, monthlyProgress, progressPct,
     sanitizeLog, normalizeHabit,
     dayStreak, weekStreak, streakInfo, streakLabel, bestStreak, checkMilestone,
-    last14, buildMonthCells, parseBackupPayload
+    last14, buildMonthCells, parseBackupPayload,
+    sanitizeNotes, trackedHabits, moveHabit, remindersDue
   };
 }

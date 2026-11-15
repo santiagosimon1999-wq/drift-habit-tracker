@@ -39,6 +39,7 @@ let selectedType = 'good';
 let editingId = null;
 let historyId = null;
 let historyCursor = null; // { year, month } month is 0-11
+let noteDate = null; // YYYY-MM-DD the history note field is editing
 let pendingImportHabits = null;
 let confirmResolver = null;
 let modalReturnFocus = null;
@@ -98,7 +99,7 @@ function aggregateProgress(progressFn){
   let goalsMet = 0;
   let target = 0;
   let achieved = 0;
-  habits.forEach(h => {
+  trackedHabits(habits).forEach(h => {
     const p = progressFn(h);
     completions += p.done;
     target += p.goal;
@@ -110,9 +111,10 @@ function aggregateProgress(progressFn){
 }
 
 function mostConsistentThisMonth(){
-  if(habits.length === 0) return null;
+  const tracked = trackedHabits(habits);
+  if(tracked.length === 0) return null;
   let best = null;
-  habits.forEach(h => {
+  tracked.forEach(h => {
     const p = monthlyProgress(h);
     const pct = p.goal ? (p.done / p.goal) : 0;
     const candidate = { habit: h, done: p.done, goal: p.goal, pct };
@@ -151,8 +153,9 @@ function render(){
   goodList.innerHTML = '';
   badList.innerHTML = '';
 
-  const good = habits.filter(h => h.type === 'good');
-  const bad = habits.filter(h => h.type === 'bad');
+  const onBoard = habits.filter(h => h.status !== 'archived');
+  const good = onBoard.filter(h => h.type === 'good');
+  const bad = onBoard.filter(h => h.type === 'bad');
 
   if(good.length === 0){
     goodList.innerHTML = '<div class="empty">No habits yet. Add something you want to start doing.</div>';
@@ -166,9 +169,37 @@ function render(){
     bad.forEach(h => badList.appendChild(renderCard(h)));
   }
 
+  renderArchived();
   renderDashboard();
   renderStats();
   renderedDay = todayStr(0);
+}
+
+function renderArchived(){
+  const section = $('archivedSection');
+  const archived = habits.filter(h => h.status === 'archived');
+  if(archived.length === 0){
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+  $('archivedCount').textContent = `Archived (${archived.length})`;
+  const list = $('archivedList');
+  list.innerHTML = '';
+  archived.forEach(h => {
+    const row = document.createElement('div');
+    row.className = 'archived-row ' + h.type;
+    const days = Object.keys(h.log).length;
+    row.innerHTML = `
+      <span class="archived-name">${escapeHtml(h.name)}</span>
+      <span class="archived-meta">${days} day${days === 1 ? '' : 's'} logged</span>
+      <button type="button" class="backup-btn archived-restore">Restore</button>
+      <button type="button" class="backup-btn archived-delete">Delete</button>
+    `;
+    row.querySelector('.archived-restore').addEventListener('click', () => setHabitStatus(h.id, 'active'));
+    row.querySelector('.archived-delete').addEventListener('click', () => deleteHabit(h.id));
+    list.appendChild(row);
+  });
 }
 
 function renderProgressItem(label, done, goal, fillClass){
@@ -194,6 +225,8 @@ function renderCard(h){
     return card;
   }
 
+  const paused = h.status === 'paused';
+  if(paused) card.classList.add('paused');
   const streak = streakInfo(h);
   const doneToday = !!h.log[todayStr(0)];
   const wave = last14(h);
@@ -209,7 +242,7 @@ function renderCard(h){
   top.innerHTML = `
     <div class="card-name">${escapeHtml(h.name)}</div>
     <div class="card-actions">
-      <span class="streak-pill" title="${streakTitle}">${streakLabel(streak)}</span>
+      <span class="streak-pill" title="${paused ? 'Paused — not counted in stats or reminders' : streakTitle}">${paused ? 'paused' : streakLabel(streak)}</span>
       <button type="button" class="hist-btn${historyOpen ? ' active' : ''}" title="History" aria-label="View habit history" aria-expanded="${historyOpen}">${ICON_HISTORY}</button>
       <button type="button" class="edit-btn" title="Edit habit" aria-label="Edit habit">${ICON_EDIT}</button>
       <button type="button" class="del-btn" title="Delete habit" aria-label="Delete habit">${ICON_DELETE}</button>
@@ -243,11 +276,17 @@ function renderCard(h){
   bottom.innerHTML = `<span class="wave-label">LAST 14 DAYS</span>`;
   const btn = document.createElement('button');
   btn.type = 'button';
-  btn.className = 'check-btn' + (doneToday ? ' done' : '');
-  btn.textContent = doneToday
-    ? (h.type === 'good' ? '✓ DONE TODAY' : '✓ STAYED CLEAN')
-    : (h.type === 'good' ? 'MARK DONE' : 'MARK CLEAN');
-  btn.addEventListener('click', () => toggleToday(h.id));
+  if(paused){
+    btn.className = 'check-btn';
+    btn.textContent = 'RESUME';
+    btn.addEventListener('click', () => setHabitStatus(h.id, 'active'));
+  } else {
+    btn.className = 'check-btn' + (doneToday ? ' done' : '');
+    btn.textContent = doneToday
+      ? (h.type === 'good' ? '✓ DONE TODAY' : '✓ STAYED CLEAN')
+      : (h.type === 'good' ? 'MARK DONE' : 'MARK CLEAN');
+    btn.addEventListener('click', () => toggleToday(h.id));
+  }
   bottom.appendChild(btn);
   card.appendChild(bottom);
 
@@ -311,12 +350,13 @@ function renderHistoryPanel(h){
     const isFuture = key > today; // YYYY-MM-DD compares chronologically
     const el = document.createElement('button');
     el.type = 'button';
-    el.className = 'cal-day' + (logged ? ' logged' : '') + (isToday ? ' today' : '');
+    const hasNote = !!(h.notes && h.notes[key]);
+    el.className = 'cal-day' + (logged ? ' logged' : '') + (isToday ? ' today' : '') + (hasNote ? ' has-note' : '');
     el.textContent = String(day);
     el.dataset.date = key;
     el.setAttribute('aria-pressed', logged ? 'true' : 'false');
     const longDate = date.toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' });
-    el.setAttribute('aria-label', `${longDate}${logged ? ', logged' : ', not logged'}`);
+    el.setAttribute('aria-label', `${longDate}${logged ? ', logged' : ', not logged'}${hasNote ? ', has note' : ''}`);
     if(isFuture){
       el.disabled = true;
       el.title = key + ' · future';
@@ -327,6 +367,32 @@ function renderHistoryPanel(h){
     grid.appendChild(el);
   });
   panel.appendChild(grid);
+
+  const today2 = todayStr(0);
+  if(!noteDate || !isValidDateKey(noteDate) || noteDate > today2) noteDate = today2;
+  const noteBox = document.createElement('div');
+  noteBox.className = 'history-note';
+  noteBox.innerHTML = `
+    <label class="note-label">Note for
+      <input type="date" class="note-date" max="${today2}" value="${noteDate}">
+    </label>
+    <textarea class="note-text" maxlength="${MAX_NOTE_LENGTH}" rows="2" placeholder="How did it go? (saves automatically)" aria-label="Note for ${noteDate}"></textarea>
+    <span class="note-status" role="status" aria-live="polite"></span>
+  `;
+  const noteText = noteBox.querySelector('.note-text');
+  noteText.value = (h.notes && h.notes[noteDate]) || '';
+  const activeNoteDate = noteDate;
+  noteText.addEventListener('change', () => saveNote(h.id, activeNoteDate, noteText.value));
+  noteBox.querySelector('.note-date').addEventListener('change', (e) => {
+    const v = e.target.value;
+    if(!isValidDateKey(v) || v > todayStr(0)) return;
+    saveNote(h.id, activeNoteDate, noteText.value); // keep what was typed
+    noteDate = v;
+    const [y, m] = v.split('-').map(Number);
+    historyCursor = { year: y, month: m - 1 };
+    render();
+  });
+  panel.appendChild(noteBox);
 
   const note = document.createElement('div');
   note.className = 'cal-note';
@@ -364,6 +430,20 @@ function renderCardEditor(h){
   weeklyInput.value = String(getWeeklyGoal(h));
   monthlyInput.value = String(getMonthlyGoal(h));
   form.appendChild(goals);
+
+  const organize = document.createElement('div');
+  organize.className = 'card-edit-organize';
+  organize.innerHTML = `
+    <button type="button" class="org-up" aria-label="Move habit up">↑ Up</button>
+    <button type="button" class="org-down" aria-label="Move habit down">↓ Down</button>
+    <button type="button" class="org-pause">${h.status === 'paused' ? 'Resume' : 'Pause'}</button>
+    <button type="button" class="org-archive">Archive</button>
+  `;
+  organize.querySelector('.org-up').addEventListener('click', () => reorderHabit(h.id, -1));
+  organize.querySelector('.org-down').addEventListener('click', () => reorderHabit(h.id, 1));
+  organize.querySelector('.org-pause').addEventListener('click', () => setHabitStatus(h.id, h.status === 'paused' ? 'active' : 'paused'));
+  organize.querySelector('.org-archive').addEventListener('click', () => setHabitStatus(h.id, 'archived'));
+  form.appendChild(organize);
 
   const errorEl = document.createElement('div');
   errorEl.className = 'card-edit-error';
@@ -419,7 +499,8 @@ function escapeHtml(s){
 
 function renderDashboard(){
   const el = $('dashboard');
-  if(habits.length === 0){
+  const tracked = trackedHabits(habits);
+  if(tracked.length === 0){
     el.hidden = true;
     el.innerHTML = '';
     return;
@@ -428,7 +509,7 @@ function renderDashboard(){
 
   const week = aggregateProgress(weeklyProgress);
   const month = aggregateProgress(monthlyProgress);
-  const best = bestStreak(habits);
+  const best = bestStreak(tracked);
   const consistent = mostConsistentThisMonth();
 
   el.innerHTML = `
@@ -443,7 +524,7 @@ function renderDashboard(){
   const weekPanel = el.querySelector('#dashWeek');
   weekPanel.innerHTML = `<h3>This Week</h3>`;
   weekPanel.appendChild(dashRow('Completions', String(week.completions)));
-  weekPanel.appendChild(dashRow('Weekly goals', `${week.goalsMet}/${habits.length}`));
+  weekPanel.appendChild(dashRow('Weekly goals', `${week.goalsMet}/${tracked.length}`));
   weekPanel.appendChild(dashRow('Completion', `${week.pct}%`));
   const weekBar = document.createElement('div');
   weekBar.className = 'dash-bar-wrap';
@@ -453,7 +534,7 @@ function renderDashboard(){
   const monthPanel = el.querySelector('#dashMonth');
   monthPanel.innerHTML = `<h3>This Month</h3>`;
   monthPanel.appendChild(dashRow('Completions', String(month.completions)));
-  monthPanel.appendChild(dashRow('Monthly goals', `${month.goalsMet}/${habits.length}`));
+  monthPanel.appendChild(dashRow('Monthly goals', `${month.goalsMet}/${tracked.length}`));
   monthPanel.appendChild(dashRow('Completion', `${month.pct}%`));
   const monthBar = document.createElement('div');
   monthBar.className = 'dash-bar-wrap';
@@ -493,19 +574,20 @@ function dashRow(k, v){
 
 function renderStats(){
   const statsEl = $('stats');
-  if(habits.length === 0){ statsEl.hidden = true; return; }
+  const tracked = trackedHabits(habits);
+  if(tracked.length === 0){ statsEl.hidden = true; return; }
   statsEl.hidden = false;
 
-  const totalHabits = habits.length;
-  const doneTodayCount = habits.filter(h => h.log[todayStr(0)]).length;
-  const longest = streakLabel(bestStreak(habits));
+  const totalHabits = tracked.length;
+  const doneTodayCount = tracked.filter(h => h.log[todayStr(0)]).length;
+  const longest = streakLabel(bestStreak(tracked));
 
-  const weeklyMet = habits.filter(h => {
+  const weeklyMet = tracked.filter(h => {
     const p = weeklyProgress(h);
     return p.done >= p.goal;
   }).length;
 
-  const monthlyMet = habits.filter(h => {
+  const monthlyMet = tracked.filter(h => {
     const p = monthlyProgress(h);
     return p.done >= p.goal;
   }).length;
@@ -535,11 +617,48 @@ function toggleToday(id){
   }
 }
 
+function setHabitStatus(id, status){
+  const h = habits.find(x => x.id === id);
+  if(!h || !HABIT_STATUSES.includes(status)) return;
+  h.status = status;
+  if(editingId === id) editingId = null;
+  if(status === 'archived' && historyId === id){
+    historyId = null;
+    historyCursor = null;
+  }
+  render();
+  saveHabits();
+}
+
+function reorderHabit(id, dir){
+  habits = moveHabit(habits, id, dir);
+  render();
+  saveHabits();
+  const btn = document.querySelector(dir < 0 ? '.org-up' : '.org-down');
+  if(btn) btn.focus();
+}
+
+/** Save the note for one day without re-rendering (so focus and typing aren't disturbed). */
+function saveNote(id, key, text){
+  const h = habits.find(x => x.id === id);
+  if(!h || !isValidDateKey(key) || key > todayStr(0)) return;
+  const clean = text.trim().slice(0, MAX_NOTE_LENGTH);
+  if(!h.notes) h.notes = {};
+  if(clean) h.notes[key] = clean;
+  else delete h.notes[key];
+  saveHabits();
+  const dayEl = document.querySelector(`.cal-day[data-date="${key}"]`);
+  if(dayEl) dayEl.classList.toggle('has-note', !!clean);
+  const status = document.querySelector('.note-status');
+  if(status) status.textContent = clean ? 'Saved' : 'Note removed';
+}
+
 /** Toggle any past/present day from the history calendar (future days are refused). */
 function toggleDay(id, key){
   const h = habits.find(x => x.id === id);
   if(!h || key > todayStr(0)) return;
   h.log[key] = !h.log[key];
+  noteDate = key; // the note field follows the last day you touched
   render();
   saveHabits();
   const btn = document.querySelector(`.cal-day[data-date="${key}"]`);
@@ -607,6 +726,7 @@ function toggleHistory(id){
 
   editingId = null;
   historyId = id;
+  noteDate = null;
   const now = new Date();
   historyCursor = { year: now.getFullYear(), month: now.getMonth() };
   render();
@@ -670,6 +790,8 @@ function exportBackup(){
       weeklyGoal: getWeeklyGoal(h),
       monthlyGoal: getMonthlyGoal(h),
       log: h.log || {},
+      notes: h.notes || {},
+      status: h.status || 'active',
       createdAt: h.createdAt
     }))
   };
@@ -841,6 +963,87 @@ function cycleTheme(){
 }
 
 // =============================================================================
+// Daily reminder (notification while the app is open or running in the background)
+// =============================================================================
+const REMINDER_KEY = 'drift-reminder';
+
+function getReminder(){
+  try {
+    const r = JSON.parse(localStorage.getItem(REMINDER_KEY) || 'null');
+    if(r && typeof r === 'object') return { enabled: !!r.enabled, time: /^\d{2}:\d{2}$/.test(r.time) ? r.time : '20:00', lastDay: r.lastDay || null };
+  } catch (e) { /* fall through */ }
+  return { enabled: false, time: '20:00', lastDay: null };
+}
+
+function saveReminder(r){
+  try { localStorage.setItem(REMINDER_KEY, JSON.stringify(r)); } catch (e) { /* not persisted */ }
+}
+
+function reminderSupported(){
+  return typeof Notification !== 'undefined';
+}
+
+function renderReminderControls(){
+  const r = getReminder();
+  const on = r.enabled && reminderSupported() && Notification.permission === 'granted';
+  $('reminderBtn').textContent = 'Reminder: ' + (on ? 'On' : 'Off');
+  $('reminderBtn').setAttribute('aria-pressed', on ? 'true' : 'false');
+  $('reminderTime').hidden = !on;
+  $('reminderTime').value = r.time;
+}
+
+async function toggleReminder(){
+  const r = getReminder();
+  if(!reminderSupported()){
+    setBackupMsg('Notifications are not supported in this browser.', true);
+    return;
+  }
+  if(r.enabled && Notification.permission === 'granted'){
+    saveReminder({ ...r, enabled: false });
+    renderReminderControls();
+    setBackupMsg('Reminder turned off.', false);
+    return;
+  }
+  const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+  if(permission !== 'granted'){
+    saveReminder({ ...r, enabled: false });
+    renderReminderControls();
+    setBackupMsg('Notifications are blocked. Allow them in your browser settings to get reminders.', true);
+    return;
+  }
+  saveReminder({ ...r, enabled: true, lastDay: null });
+  renderReminderControls();
+  setBackupMsg(`Reminder on: daily at ${r.time} if habits are still pending. Drift has to be open (or installed) to notify you.`, false);
+  checkReminder();
+}
+
+async function showReminderNotification(count){
+  const title = 'Drift';
+  const body = `${count} habit${count === 1 ? '' : 's'} still to log today.`;
+  const options = { body, icon: 'assets/icon-192.png', tag: 'drift-daily', data: { url: './' } };
+  try {
+    if('serviceWorker' in navigator){
+      const reg = await navigator.serviceWorker.getRegistration();
+      if(reg){ await reg.showNotification(title, options); return; }
+    }
+    new Notification(title, options);
+  } catch (e) {
+    console.warn('Could not show notification', e);
+  }
+}
+
+function checkReminder(){
+  if(!reminderSupported() || Notification.permission !== 'granted') return;
+  const r = getReminder();
+  const now = new Date();
+  const count = remindersDue(r, habits, now);
+  if(count > 0){
+    saveReminder({ ...r, lastDay: localDateStr(now) });
+    showReminderNotification(count);
+  }
+}
+
+// =============================================================================
 // Week start (Monday / Sunday)
 // =============================================================================
 function loadWeekStart(){
@@ -863,6 +1066,17 @@ function init(){
   $('themeBtn').addEventListener('click', cycleTheme);
   loadWeekStart();
   $('weekStartBtn').addEventListener('click', toggleWeekStart);
+
+  renderReminderControls();
+  $('reminderBtn').addEventListener('click', toggleReminder);
+  $('reminderTime').addEventListener('change', (e) => {
+    if(!/^\d{2}:\d{2}$/.test(e.target.value)) return;
+    saveReminder({ ...getReminder(), time: e.target.value, lastDay: null });
+    setBackupMsg(`Reminder set for ${e.target.value}.`, false);
+    checkReminder();
+  });
+  setInterval(checkReminder, 30000);
+  document.addEventListener('visibilitychange', () => { if(!document.hidden) checkReminder(); });
 
   loadHabits();
   $('statusMsg').hidden = true;
