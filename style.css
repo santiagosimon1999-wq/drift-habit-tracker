@@ -16,6 +16,28 @@
     --ember-dim:#4a2e26;
     --gold:#d9a441;
     --radius:14px;
+    color-scheme:dark;
+  }
+
+  /* Light theme follows the system setting */
+  @media (prefers-color-scheme: light){
+    :root{
+      --void:#f6f3ec;
+      --void-2:#efebe2;
+      --slate:#ffffff;
+      --slate-2:#f0ece3;
+      --hair:#d9d3c5;
+      --bone:#23252d;
+      --bone-dim:#62646c;
+      --moss:#2f6b2b;
+      --moss-dim:#dcebd8;
+      --ember:#a93c22;
+      --ember-dim:#f6ddd5;
+      --gold:#8f5f08;
+      color-scheme:light;
+    }
+    button.cal-day:hover:not(:disabled){background:rgba(0,0,0,0.06);}
+    .modal-backdrop{background:rgba(30,30,40,0.45);}
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   html,body{height:100%;}
@@ -314,6 +336,7 @@ input[type=file]:focus-visible{
     background:none;border:none;color:var(--bone-dim);
     cursor:pointer;font-size:15px;line-height:1;padding:4px;
     opacity:.5;transition:.15s;
+    display:inline-flex;align-items:center;justify-content:center;
   }
   .hist-btn{font-size:13px;letter-spacing:.02em;font-family:'IBM Plex Mono',monospace;}
   .hist-btn:hover,
@@ -524,7 +547,13 @@ input[type=file]:focus-visible{
     font-size:11px;
     color:var(--bone-dim);
     background:transparent;
+    border:0;
+    padding:0;
+    cursor:pointer;
   }
+  button.cal-day:hover:not(:disabled){background:rgba(255,255,255,0.07);color:var(--bone);}
+  button.cal-day:disabled{cursor:default;opacity:.35;}
+  .cal-day:focus-visible{outline:2px solid var(--gold);outline-offset:1px;}
   .cal-day.empty{visibility:hidden;}
   .cal-day.today{
     box-shadow:inset 0 0 0 1px var(--gold);

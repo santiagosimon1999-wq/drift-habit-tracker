@@ -15,7 +15,8 @@ Drift is a responsive personal habit tracker built with vanilla HTML, CSS, and J
 - Weekly goals (1–7 successful days)
 - Monthly goals (1–31 successful days)
 - Weekly and monthly progress bars
-- Streak tracking
+- Streaks that respect your goals: day streaks for daily habits, week streaks for habits with a lighter weekly goal
+- Click any past day in the history calendar to fix a missed log
 - 14-day activity visualization
 - Monthly habit calendar / history view
 - Weekly / monthly overview dashboard
@@ -25,15 +26,15 @@ Drift is a responsive personal habit tracker built with vanilla HTML, CSS, and J
 - JSON backup export
 - JSON backup import
 - Responsive layout for desktop and mobile
+- Installable PWA that works offline
+- Automatic light / dark theme
+- Keyboard- and screen-reader-friendly (labelled progress bars, accessible dialogs)
 
 ## Screenshots
 
-<!-- TODO: Add screenshots here, for example:
-![Drift habit cards](assets/screenshot-habits.png)
-![Drift calendar and dashboard](assets/screenshot-overview.png)
--->
-
-_Screenshots coming soon. Add images under `assets/` and link them in this section._
+![Drift in dark mode](assets/screenshot-dark.png)
+![Drift habit history calendar](assets/screenshot-history.png)
+![Drift in light mode](assets/screenshot-light.png)
 
 ## Tech Stack
 
@@ -41,6 +42,8 @@ _Screenshots coming soon. Add images under `assets/` and link them in this secti
 - CSS3
 - Vanilla JavaScript
 - Web Storage / localStorage
+- Service Worker + Web App Manifest (PWA)
+- Node's built-in test runner (`node --test`)
 - Git
 - GitHub
 - GitHub Pages
@@ -63,7 +66,9 @@ python3 -m http.server 8000
 
 Then open [http://localhost:8000](http://localhost:8000) in your browser.
 
-You can also open `index.html` directly, but a local server is recommended so file-based features (like import) behave consistently.
+Run the unit tests (streaks, goals, backup parsing) with `npm test` — no dependencies needed, Node 20+.
+
+The app is installable and works offline once loaded over HTTP(S) (the service worker is skipped on `file://`). You can also open `index.html` directly, but a local server is recommended so file-based features (like import) behave consistently.
 
 ## Data & Privacy
 
