@@ -27,7 +27,8 @@ Drift is a responsive personal habit tracker built with vanilla HTML, CSS, and J
 - JSON backup import
 - Responsive layout for desktop and mobile
 - Installable PWA that works offline
-- Automatic light / dark theme
+- Configurable first day of the week (Monday or Sunday)
+- Light / dark theme: follows your system, or pick one with the footer button
 - Keyboard- and screen-reader-friendly (labelled progress bars, accessible dialogs)
 
 ## Screenshots
@@ -66,7 +67,7 @@ python3 -m http.server 8000
 
 Then open [http://localhost:8000](http://localhost:8000) in your browser.
 
-Run the unit tests (streaks, goals, backup parsing) with `npm test` — no dependencies needed, Node 20+.
+Run the tests with `npm test` (Node 20+). Unit tests (streaks, goals, backup parsing) need no dependencies; UI tests use Playwright (`npm install && npx playwright install chromium`) and are skipped if it isn't installed.
 
 The app is installable and works offline once loaded over HTTP(S) (the service worker is skipped on `file://`). You can also open `index.html` directly, but a local server is recommended so file-based features (like import) behave consistently.
 

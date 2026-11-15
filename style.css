@@ -19,9 +19,9 @@
     color-scheme:dark;
   }
 
-  /* Light theme follows the system setting */
+  /* Light theme: follows the system unless the user picked a theme (data-theme on <html>) */
   @media (prefers-color-scheme: light){
-    :root{
+    :root:not([data-theme="dark"]){
       --void:#f6f3ec;
       --void-2:#efebe2;
       --slate:#ffffff;
@@ -36,9 +36,27 @@
       --gold:#8f5f08;
       color-scheme:light;
     }
-    button.cal-day:hover:not(:disabled){background:rgba(0,0,0,0.06);}
-    .modal-backdrop{background:rgba(30,30,40,0.45);}
+    :root:not([data-theme="dark"]) button.cal-day:hover:not(:disabled){background:rgba(0,0,0,0.06);}
+    :root:not([data-theme="dark"]) .modal-backdrop{background:rgba(30,30,40,0.45);}
   }
+  :root[data-theme="light"]{
+      --void:#f6f3ec;
+      --void-2:#efebe2;
+      --slate:#ffffff;
+      --slate-2:#f0ece3;
+      --hair:#d9d3c5;
+      --bone:#23252d;
+      --bone-dim:#62646c;
+      --moss:#2f6b2b;
+      --moss-dim:#dcebd8;
+      --ember:#a93c22;
+      --ember-dim:#f6ddd5;
+      --gold:#8f5f08;
+      color-scheme:light;
+  }
+  :root[data-theme="light"] button.cal-day:hover:not(:disabled){background:rgba(0,0,0,0.06);}
+  :root[data-theme="light"] .modal-backdrop{background:rgba(30,30,40,0.45);}
+
   *{box-sizing:border-box;margin:0;padding:0;}
   html,body{height:100%;}
   .sr-only{
@@ -775,3 +793,5 @@ input[type=file]:focus-visible{
     font-weight:600;
   }
   .modal-confirm:hover{opacity:.9;}
+
+  .theme-btn{margin-top:10px;}

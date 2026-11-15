@@ -86,12 +86,22 @@ function parseMonthlyGoal(value){
   return n;
 }
 
-/** Monday (local) of the current week at noon. */
+// First day of the week: 1 = Monday (default), 0 = Sunday
+let weekStartsOn = 1;
+
+function setWeekStart(day){
+  weekStartsOn = day === 0 ? 0 : 1;
+}
+
+function getWeekStart(){
+  return weekStartsOn;
+}
+
+/** First day (local, noon) of the current week, per the week-start setting. */
 function startOfCurrentWeek(){
   const d = noonToday();
-  const day = d.getDay(); // 0=Sun … 6=Sat
-  const mondayOffset = day === 0 ? 6 : day - 1;
-  d.setDate(d.getDate() - mondayOffset);
+  const back = (d.getDay() - weekStartsOn + 7) % 7; // getDay: 0=Sun … 6=Sat
+  d.setDate(d.getDate() - back);
   return d;
 }
 
@@ -267,10 +277,9 @@ function last14(h){
 function buildMonthCells(year, month){
   const first = new Date(year, month, 1, 12, 0, 0, 0);
   const total = daysInMonth(year, month);
-  const sunBased = first.getDay(); // 0=Sun
-  const mondayOffset = sunBased === 0 ? 6 : sunBased - 1;
+  const leadingBlanks = (first.getDay() - weekStartsOn + 7) % 7;
   const cells = [];
-  for(let i = 0; i < mondayOffset; i++) cells.push(null);
+  for(let i = 0; i < leadingBlanks; i++) cells.push(null);
   for(let d = 1; d <= total; d++) cells.push(d);
   while(cells.length % 7 !== 0) cells.push(null);
   return cells;
@@ -331,7 +340,7 @@ function parseBackupPayload(text){
 
 if(typeof module !== 'undefined' && module.exports){
   module.exports = {
-    setNowProvider, todayStr, localDateStr, isValidDateKey, daysInMonth,
+    setNowProvider, setWeekStart, getWeekStart, startOfCurrentWeek, todayStr, localDateStr, isValidDateKey, daysInMonth,
     getWeeklyGoal, getMonthlyGoal, parseWeeklyGoal, parseMonthlyGoal,
     countLoggedDays, weeklyProgress, monthlyProgress, progressPct,
     sanitizeLog, normalizeHabit,

@@ -1,8 +1,11 @@
 {
   "name": "drift-habit-tracker",
   "private": true,
-  "description": "Drift — a vanilla JS habit tracker",
+  "description": "Drift \u2014 a vanilla JS habit tracker",
   "scripts": {
     "test": "node --test \"tests/*.test.js\""
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
   }
 }
