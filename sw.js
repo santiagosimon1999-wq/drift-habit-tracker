@@ -2,7 +2,7 @@
  * Stale-while-revalidate: pages load instantly from cache and refresh in the background.
  * Bump CACHE_VERSION when changing the precache list.
  */
-const CACHE_VERSION = 'drift-v1';
+const CACHE_VERSION = 'drift-v2';
 const PRECACHE = [
   './',
   'index.html',

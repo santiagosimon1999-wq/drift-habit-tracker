@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Drift is a personal habit tracker for building good habits and breaking bad ones, with weekly and monthly goals, streaks, and local backups.">
   <meta name="theme-color" content="#12141a">
+  <script>
+    // Apply the saved theme before first paint to avoid a flash
+    try { var t = localStorage.getItem('drift-theme'); if(t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
@@ -84,6 +88,9 @@
         <button type="button" class="backup-btn" id="exportBtn">Export Backup</button>
         <button type="button" class="backup-btn" id="importBtn">Import Backup</button>
         <input type="file" id="importFile" accept="application/json,.json" hidden aria-hidden="true">
+      </div>
+      <div class="backup-row">
+        <button type="button" class="backup-btn" id="themeBtn" aria-label="Change color theme">Theme: System</button>
       </div>
       <p class="backup-msg" id="backupMsg" role="status" aria-live="polite"></p>
       <button type="button" class="reset-link" id="resetBtn">clear all data</button>

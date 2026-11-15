@@ -806,8 +806,43 @@ function setHabitType(type){
   $('btnBad').setAttribute('aria-pressed', isGood ? 'false' : 'true');
 }
 
+// =============================================================================
+// Theme (System → Light → Dark)
+// =============================================================================
+const THEMES = ['system', 'light', 'dark'];
+
+function getSavedTheme(){
+  try {
+    const t = localStorage.getItem('drift-theme');
+    return THEMES.includes(t) ? t : 'system';
+  } catch (e) { return 'system'; }
+}
+
+function applyTheme(theme){
+  const root = document.documentElement;
+  if(theme === 'system') delete root.dataset.theme;
+  else root.dataset.theme = theme;
+  $('themeBtn').textContent = 'Theme: ' + theme.charAt(0).toUpperCase() + theme.slice(1);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta){
+    const light = theme === 'light' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: light)').matches);
+    meta.setAttribute('content', light ? '#f6f3ec' : '#12141a');
+  }
+}
+
+function cycleTheme(){
+  const next = THEMES[(THEMES.indexOf(getSavedTheme()) + 1) % THEMES.length];
+  try {
+    if(next === 'system') localStorage.removeItem('drift-theme');
+    else localStorage.setItem('drift-theme', next);
+  } catch (e) { /* theme just won't persist */ }
+  applyTheme(next);
+}
+
 function init(){
   showTodaysQuote();
+  applyTheme(getSavedTheme());
+  $('themeBtn').addEventListener('click', cycleTheme);
 
   loadHabits();
   $('statusMsg').hidden = true;
