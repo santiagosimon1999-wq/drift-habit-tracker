@@ -27,8 +27,8 @@ test('UI flows', { skip: !chromium && 'playwright not installed' }, async (t) =>
   const browser = await chromium.launch();
   t.after(async () => { await browser.close(); server.close(); });
 
-  const open = async () => {
-    const ctx = await browser.newContext({ serviceWorkers: 'block' });
+  const open = async (ctxOptions = {}) => {
+    const ctx = await browser.newContext({ serviceWorkers: 'block', ...ctxOptions });
     const page = await ctx.newPage();
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
@@ -100,6 +100,76 @@ test('UI flows', { skip: !chromium && 'playwright not installed' }, async (t) =>
     assert.equal(await page.locator('.cal-dow').first().textContent(), 'SUN');
     await page.reload();
     assert.equal(await page.textContent('#weekStartBtn'), 'Week starts: Sunday');
+  });
+
+  await t.test('habits can be reordered from the editor', async () => {
+    const { page } = await open();
+    await addHabit(page, 'First');
+    await addHabit(page, 'Second');
+    await page.locator('.card', { hasText: 'Second' }).locator('.edit-btn').click();
+    await page.click('.org-up');
+    await page.click('.edit-cancel');
+    assert.deepEqual(await page.locator('.card-name').allTextContents(), ['Second', 'First']);
+    await page.reload();
+    assert.deepEqual(await page.locator('.card-name').allTextContents(), ['Second', 'First']);
+  });
+
+  await t.test('pausing keeps the habit but removes it from stats; resume restores it', async () => {
+    const { page } = await open();
+    await addHabit(page, 'Read');
+    assert.equal(await page.isVisible('#stats'), true);
+    await page.click('.edit-btn');
+    await page.click('.org-pause');
+    assert.equal(await page.textContent('.streak-pill'), 'paused');
+    assert.equal(await page.isVisible('#stats'), false);
+    await page.click('.check-btn'); // RESUME
+    assert.equal(await page.isVisible('#stats'), true);
+    assert.match(await page.textContent('.check-btn'), /MARK DONE/);
+  });
+
+  await t.test('archive hides a habit, keeps its history, and restore brings it back', async () => {
+    const { page } = await open();
+    await addHabit(page, 'Read');
+    await page.click('.check-btn');
+    await page.click('.edit-btn');
+    await page.click('.org-archive');
+    assert.equal(await page.locator('.card').count(), 0);
+    await page.reload();
+    assert.equal(await page.isVisible('#archivedSection'), true);
+    assert.match(await page.textContent('#archivedCount'), /Archived \(1\)/);
+    await page.click('#archivedCount');
+    await page.click('.archived-restore');
+    assert.equal(await page.locator('.card').count(), 1);
+    assert.equal(await page.textContent('.streak-pill'), '1 day'); // log survived
+  });
+
+  await t.test('day notes autosave, show a marker, and persist', async () => {
+    const { page } = await open();
+    await addHabit(page, 'Read');
+    await page.click('.hist-btn');
+    await page.fill('.note-text', 'Felt great today');
+    await page.locator('.note-text').blur();
+    assert.equal(await page.textContent('.note-status'), 'Saved');
+    assert.equal(await page.locator('.cal-day.has-note').count(), 1);
+    await page.reload();
+    await page.click('.hist-btn');
+    assert.equal(await page.inputValue('.note-text'), 'Felt great today');
+  });
+
+  await t.test('reminder can be enabled when notifications are allowed', async () => {
+    const { page } = await open();
+    // Headless Chromium can't grant notification permission, so stub the API for this test
+    await page.addInitScript(() => {
+      Object.defineProperty(Notification, 'permission', { get: () => 'granted' });
+      Notification.requestPermission = async () => 'granted';
+    });
+    await page.reload();
+    await page.click('#reminderBtn');
+    await page.waitForFunction(() => document.getElementById('reminderBtn').textContent === 'Reminder: On');
+    assert.equal(await page.isVisible('#reminderTime'), true);
+    await page.fill('#reminderTime', '07:30');
+    await page.reload();
+    assert.equal(await page.inputValue('#reminderTime'), '07:30');
   });
 
   await t.test('theme button cycles and persists', async () => {

@@ -80,6 +80,13 @@
 
       <section class="dashboard" id="dashboard" aria-label="Overview dashboard" hidden></section>
 
+      <section class="archived" id="archivedSection" aria-label="Archived habits" hidden>
+        <details id="archivedDetails">
+          <summary id="archivedCount">Archived</summary>
+          <div id="archivedList"></div>
+        </details>
+      </section>
+
       <section class="stats" id="stats" aria-label="Quick stats" hidden></section>
     </main>
 
@@ -92,6 +99,8 @@
       <div class="backup-row">
         <button type="button" class="backup-btn" id="themeBtn" aria-label="Change color theme">Theme: System</button>
         <button type="button" class="backup-btn" id="weekStartBtn" aria-label="Change first day of the week">Week starts: Monday</button>
+        <button type="button" class="backup-btn" id="reminderBtn" aria-pressed="false">Reminder: Off</button>
+        <input type="time" id="reminderTime" class="reminder-time" value="20:00" aria-label="Reminder time" hidden>
       </div>
       <p class="backup-msg" id="backupMsg" role="status" aria-live="polite"></p>
       <button type="button" class="reset-link" id="resetBtn">clear all data</button>
