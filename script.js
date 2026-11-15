@@ -1,5 +1,5 @@
 /* Drift — Habit Tracker
- * Vanilla JS app logic. Persists habits under localStorage key "drift-habits".
+ * Vanilla JS UI. Pure logic (dates, goals, streaks, backup parsing) lives in logic.js. Persists habits under localStorage key "drift-habits".
  */
 
 // =============================================================================
@@ -29,8 +29,6 @@ const QUOTES = [
   "Identity follows action. Act like who you're trying to become."
 ];
 
-const DEFAULT_WEEKLY_GOAL = 7;
-const DEFAULT_MONTHLY_GOAL = 30;
 const BACKUP_VERSION = 1;
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DOW_LABELS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
@@ -51,142 +49,11 @@ let renderedDay = null;
 
 const $ = (id) => document.getElementById(id);
 
-// =============================================================================
-// Date utilities (local calendar dates — avoid UTC / toISOString for day keys)
-// =============================================================================
-
-/** Format a Date as local YYYY-MM-DD (never UTC / toISOString). */
-function localDateStr(date){
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-/** Today's local calendar date, optionally shifted by whole days. */
-function todayStr(offset=0){
-  const d = new Date();
-  d.setHours(12, 0, 0, 0); // noon avoids DST edge cases when shifting days
-  d.setDate(d.getDate() - offset);
-  return localDateStr(d);
-}
-
-function uid(){ return 'h_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
-
-// =============================================================================
-// Goal helpers & validation
-// =============================================================================
-
-function getWeeklyGoal(h){
-  const g = Number(h && h.weeklyGoal);
-  if(Number.isInteger(g) && g >= 1 && g <= 7) return g;
-  return DEFAULT_WEEKLY_GOAL;
-}
-
-function getMonthlyGoal(h){
-  const g = Number(h && h.monthlyGoal);
-  if(Number.isInteger(g) && g >= 1 && g <= 31) return g;
-  return DEFAULT_MONTHLY_GOAL;
-}
-
-function parseWeeklyGoal(value){
-  const n = parseInt(String(value).trim(), 10);
-  if(!Number.isInteger(n) || n < 1 || n > 7) return null;
-  return n;
-}
-
-function parseMonthlyGoal(value){
-  const n = parseInt(String(value).trim(), 10);
-  if(!Number.isInteger(n) || n < 1 || n > 31) return null;
-  return n;
-}
-
-/** Monday (local) of the current week at noon. */
-function startOfCurrentWeek(){
-  const d = new Date();
-  d.setHours(12, 0, 0, 0);
-  const day = d.getDay(); // 0=Sun … 6=Sat
-  const mondayOffset = day === 0 ? 6 : day - 1;
-  d.setDate(d.getDate() - mondayOffset);
-  return d;
-}
-
-function endOfCurrentWeek(){
-  const d = startOfCurrentWeek();
-  d.setDate(d.getDate() + 6);
-  return d;
-}
-
-function startOfCurrentMonth(){
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), 1, 12, 0, 0, 0);
-}
-
-function endOfCurrentMonth(){
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth() + 1, 0, 12, 0, 0, 0);
-}
-
-/** Later of two dates (local noon copies). */
-function minDate(a, b){
-  return a.getTime() <= b.getTime() ? a : b;
-}
-
-/** Count successful logged calendar days in [start, end], each day once. */
-function countLoggedDays(h, startDate, endDate){
-  if(!h || !h.log) return 0;
-  let count = 0;
-  const d = new Date(startDate.getTime());
-  d.setHours(12, 0, 0, 0);
-  const end = new Date(endDate.getTime());
-  end.setHours(12, 0, 0, 0);
-  while(d <= end){
-    if(h.log[localDateStr(d)]) count++;
-    d.setDate(d.getDate() + 1);
-  }
-  return count;
-}
-
-function weeklyProgress(h){
-  const today = new Date();
-  today.setHours(12, 0, 0, 0);
-  const end = minDate(endOfCurrentWeek(), today); // don't count future days
-  const done = countLoggedDays(h, startOfCurrentWeek(), end);
-  const goal = getWeeklyGoal(h);
-  return { done, goal };
-}
-
-function monthlyProgress(h){
-  const today = new Date();
-  today.setHours(12, 0, 0, 0);
-  const end = minDate(endOfCurrentMonth(), today); // don't count future days
-  const done = countLoggedDays(h, startOfCurrentMonth(), end);
-  const goal = getMonthlyGoal(h);
-  return { done, goal };
-}
-
-function progressPct(done, goal){
-  if(!goal || goal <= 0) return 0;
-  return Math.min(100, Math.round((done / goal) * 100));
-}
-
-// =============================================================================
-// Habit model
-// =============================================================================
-
-/** Ensure existing habits without goals keep working; never wipe log/history or regenerate ids. */
-function normalizeHabit(h){
-  const log = (h && h.log && typeof h.log === 'object' && !Array.isArray(h.log)) ? h.log : {};
-  return {
-    ...h,
-    name: typeof (h && h.name) === 'string' ? h.name : '',
-    type: h && h.type === 'bad' ? 'bad' : 'good',
-    log,
-    createdAt: (h && h.createdAt) || todayStr(0),
-    weeklyGoal: !h || h.weeklyGoal == null ? DEFAULT_WEEKLY_GOAL : getWeeklyGoal(h),
-    monthlyGoal: !h || h.monthlyGoal == null ? DEFAULT_MONTHLY_GOAL : getMonthlyGoal(h)
-  };
-}
+const svgIcon = (paths) =>
+  `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${paths}</svg>`;
+const ICON_HISTORY = svgIcon('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>');
+const ICON_EDIT = svgIcon('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>');
+const ICON_DELETE = svgIcon('<path d="M18 6 6 18M6 6l12 12"/>');
 
 // =============================================================================
 // Storage (localStorage key: "drift-habits")
@@ -222,32 +89,6 @@ function saveHabits() {
 // =============================================================================
 // Habit calculations (streaks, progress)
 // =============================================================================
-function currentStreak(h){
-  let streak = 0;
-  let offset = 0;
-  // if today not logged yet, start counting from yesterday
-  if(!h.log[todayStr(0)]) offset = 1;
-  while(h.log[todayStr(offset)]){
-    streak++;
-    offset++;
-  }
-  return streak;
-}
-
-function last14(h){
-  const arr = [];
-  for(let i=13;i>=0;i--){
-    arr.push(!!h.log[todayStr(i)]);
-  }
-  return arr;
-}
-
-function checkMilestone(h){
-  const s = currentStreak(h);
-  const milestones = [3,7,14,30,60,100];
-  return milestones.includes(s) ? s : null;
-}
-
 // =============================================================================
 // Dashboard / statistics helpers
 // =============================================================================
@@ -290,18 +131,6 @@ function mostConsistentThisMonth(){
 // =============================================================================
 // Calendar / history helpers
 // =============================================================================
-function buildMonthCells(year, month){
-  const first = new Date(year, month, 1, 12, 0, 0, 0);
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const sunBased = first.getDay(); // 0=Sun
-  const mondayOffset = sunBased === 0 ? 6 : sunBased - 1;
-  const cells = [];
-  for(let i = 0; i < mondayOffset; i++) cells.push(null);
-  for(let d = 1; d <= daysInMonth; d++) cells.push(d);
-  while(cells.length % 7 !== 0) cells.push(null);
-  return cells;
-}
-
 function shiftHistoryMonth(delta){
   if(!historyCursor) return;
   let y = historyCursor.year;
@@ -350,7 +179,7 @@ function renderProgressItem(label, done, goal, fillClass){
       <span class="progress-label">${label}</span>
       <span class="progress-count">${done} / ${goal}</span>
     </div>
-    <div class="progress-track"><div class="progress-fill ${fillClass || ''}" style="width:${pct}%"></div></div>
+    <div class="progress-track" role="progressbar" aria-label="${label}: ${done} of ${goal}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><div class="progress-fill ${fillClass || ''}" style="width:${pct}%"></div></div>
   `;
   return item;
 }
@@ -364,22 +193,25 @@ function renderCard(h){
     return card;
   }
 
-  const streak = currentStreak(h);
+  const streak = streakInfo(h);
   const doneToday = !!h.log[todayStr(0)];
   const wave = last14(h);
   const week = weeklyProgress(h);
   const month = monthlyProgress(h);
   const historyOpen = historyId === h.id;
+  const streakTitle = streak.unit === 'week'
+    ? `Consecutive weeks reaching your ${getWeeklyGoal(h)}-day weekly goal`
+    : 'Consecutive days';
 
   const top = document.createElement('div');
   top.className = 'card-top';
   top.innerHTML = `
     <div class="card-name">${escapeHtml(h.name)}</div>
     <div class="card-actions">
-      <span class="streak-pill">${streak} day${streak===1?'':'s'}</span>
-      <button type="button" class="hist-btn${historyOpen ? ' active' : ''}" title="History" aria-label="View habit history" aria-expanded="${historyOpen}">▣</button>
-      <button type="button" class="edit-btn" title="Edit habit" aria-label="Edit habit">✎</button>
-      <button type="button" class="del-btn" title="Delete habit" aria-label="Delete habit">✕</button>
+      <span class="streak-pill" title="${streakTitle}">${streakLabel(streak)}</span>
+      <button type="button" class="hist-btn${historyOpen ? ' active' : ''}" title="History" aria-label="View habit history" aria-expanded="${historyOpen}">${ICON_HISTORY}</button>
+      <button type="button" class="edit-btn" title="Edit habit" aria-label="Edit habit">${ICON_EDIT}</button>
+      <button type="button" class="del-btn" title="Delete habit" aria-label="Delete habit">${ICON_DELETE}</button>
     </div>
   `;
   top.querySelector('.hist-btn').addEventListener('click', () => toggleHistory(h.id));
@@ -389,6 +221,8 @@ function renderCard(h){
 
   const waveEl = document.createElement('div');
   waveEl.className = 'wave';
+  waveEl.setAttribute('role', 'img');
+  waveEl.setAttribute('aria-label', `Last 14 days: ${wave.filter(Boolean).length} of 14 days logged`);
   wave.forEach(on => {
     const t = document.createElement('div');
     t.className = 'tick' + (on ? ' on' : '');
@@ -593,7 +427,7 @@ function renderDashboard(){
 
   const week = aggregateProgress(weeklyProgress);
   const month = aggregateProgress(monthlyProgress);
-  const bestStreak = habits.reduce((m, h) => Math.max(m, currentStreak(h)), 0);
+  const best = bestStreak(habits);
   const consistent = mostConsistentThisMonth();
 
   el.innerHTML = `
@@ -627,7 +461,7 @@ function renderDashboard(){
 
   const consPanel = el.querySelector('#dashConsistency');
   consPanel.innerHTML = `<h3>Consistency</h3>`;
-  consPanel.appendChild(dashRow('Best active streak', `${bestStreak} day${bestStreak === 1 ? '' : 's'}`));
+  consPanel.appendChild(dashRow('Best active streak', streakLabel(best)));
   const label = document.createElement('div');
   label.className = 'dash-row';
   label.innerHTML = `<span class="k">Most consistent</span>`;
@@ -663,7 +497,7 @@ function renderStats(){
 
   const totalHabits = habits.length;
   const doneTodayCount = habits.filter(h => h.log[todayStr(0)]).length;
-  const longest = habits.reduce((m,h) => Math.max(m, currentStreak(h)), 0);
+  const longest = streakLabel(bestStreak(habits));
 
   const weeklyMet = habits.filter(h => {
     const p = weeklyProgress(h);
@@ -679,7 +513,7 @@ function renderStats(){
     <div class="stat"><div class="num">${doneTodayCount}/${totalHabits}</div><div class="lbl">Done today</div></div>
     <div class="stat"><div class="num">${weeklyMet}/${totalHabits}</div><div class="lbl">Weekly goals</div></div>
     <div class="stat"><div class="num">${monthlyMet}/${totalHabits}</div><div class="lbl">Monthly goals</div></div>
-    <div class="stat"><div class="num">${longest}</div><div class="lbl">Longest active streak</div></div>
+    <div class="stat"><div class="num">${escapeHtml(longest)}</div><div class="lbl">Longest active streak</div></div>
   `;
 }
 
@@ -696,7 +530,7 @@ function toggleToday(id){
 
   const milestone = checkMilestone(h);
   if(milestone && h.log[t]){
-    showQuote(`${milestone}-day streak on "${h.name}" — that's momentum. Don't stop now.`, true);
+    showQuote(`${milestone.count}-${milestone.unit} streak on "${h.name}" — that's momentum. Don't stop now.`, true);
   }
 }
 
@@ -851,51 +685,6 @@ function exportBackup(){
   setBackupMsg('Backup exported.', false);
 }
 
-function isUsableHabit(raw){
-  if(!raw || typeof raw !== 'object') return false;
-  if(typeof raw.name !== 'string' || !raw.name.trim()) return false;
-  if(raw.type != null && raw.type !== 'good' && raw.type !== 'bad') return false;
-  if(raw.log != null && (typeof raw.log !== 'object' || Array.isArray(raw.log))) return false;
-  if(raw.id != null && typeof raw.id !== 'string') return false;
-  return true;
-}
-
-function parseBackupPayload(text){
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch (e) {
-    throw new Error('File is not valid JSON.');
-  }
-
-  let list = null;
-  if(Array.isArray(data)){
-    list = data;
-  } else if(data && typeof data === 'object' && Array.isArray(data.habits)){
-    list = data.habits;
-  } else {
-    throw new Error('Backup must include a habits array.');
-  }
-
-  if(!list.every(isUsableHabit)){
-    throw new Error('One or more habits are missing usable id/name/type/log data.');
-  }
-
-  // Normalize without mutating until confirmed; preserve ids/logs
-  return list.map(h => {
-    const normalized = normalizeHabit({
-      id: (typeof h.id === 'string' && h.id) ? h.id : uid(),
-      name: h.name.trim(),
-      type: h.type === 'bad' ? 'bad' : 'good',
-      log: h.log || {},
-      createdAt: h.createdAt,
-      weeklyGoal: h.weeklyGoal,
-      monthlyGoal: h.monthlyGoal
-    });
-    return normalized;
-  });
-}
-
 function openConfirmModal(title, body, confirmLabel){
   // Resolve any modal still open so its promise never hangs
   if(confirmResolver) closeConfirmModal(false);
@@ -1046,6 +835,22 @@ function init(){
   $('confirmCancel').addEventListener('click', () => closeConfirmModal(false));
   $('confirmOk').addEventListener('click', () => closeConfirmModal(true));
   document.addEventListener('keydown', handleModalKeydown);
+
+  // Keep several open tabs in sync instead of letting a stale tab overwrite newer data
+  window.addEventListener('storage', (e) => {
+    if(e.key !== 'drift-habits' && e.key !== null) return;
+    loadHabits();
+    if(editingId && !habits.some(h => h.id === editingId)) editingId = null;
+    if(historyId && !habits.some(h => h.id === historyId)){
+      historyId = null;
+      historyCursor = null;
+    }
+    render();
+  });
+
+  if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+    navigator.serviceWorker.register('sw.js').catch((err) => console.warn('Service worker not registered', err));
+  }
 
   // Re-render when the calendar day changes while the tab stays open
   const refreshIfNewDay = () => {
