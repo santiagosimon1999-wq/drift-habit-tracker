@@ -42,6 +42,8 @@ let historyId = null;
 let historyCursor = null; // { year, month } month is 0-11
 let pendingImportHabits = null;
 let confirmResolver = null;
+let modalReturnFocus = null;
+let renderedDay = null;
 
 // =============================================================================
 // DOM helpers
@@ -336,6 +338,7 @@ function render(){
 
   renderDashboard();
   renderStats();
+  renderedDay = todayStr(0);
 }
 
 function renderProgressItem(label, done, goal, fillClass){
@@ -460,26 +463,39 @@ function renderHistoryPanel(h){
   });
 
   cells.forEach(day => {
-    const el = document.createElement('div');
     if(day == null){
-      el.className = 'cal-day empty';
-      grid.appendChild(el);
+      const empty = document.createElement('div');
+      empty.className = 'cal-day empty';
+      grid.appendChild(empty);
       return;
     }
     const date = new Date(year, month, day, 12, 0, 0, 0);
     const key = localDateStr(date);
     const logged = !!h.log[key];
     const isToday = key === today;
+    const isFuture = key > today; // YYYY-MM-DD compares chronologically
+    const el = document.createElement('button');
+    el.type = 'button';
     el.className = 'cal-day' + (logged ? ' logged' : '') + (isToday ? ' today' : '');
     el.textContent = String(day);
-    el.title = key + (logged ? ' · logged' : '');
+    el.dataset.date = key;
+    el.setAttribute('aria-pressed', logged ? 'true' : 'false');
+    const longDate = date.toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' });
+    el.setAttribute('aria-label', `${longDate}${logged ? ', logged' : ', not logged'}`);
+    if(isFuture){
+      el.disabled = true;
+      el.title = key + ' · future';
+    } else {
+      el.title = key + (logged ? ' · logged (click to undo)' : ' · click to log');
+      el.addEventListener('click', () => toggleDay(h.id, key));
+    }
     grid.appendChild(el);
   });
   panel.appendChild(grid);
 
   const note = document.createElement('div');
   note.className = 'cal-note';
-  note.textContent = `${loggedCount} successful day${loggedCount === 1 ? '' : 's'} this month · view only`;
+  note.textContent = `${loggedCount} successful day${loggedCount === 1 ? '' : 's'} this month · click a day to fix it`;
   panel.appendChild(note);
 
   return panel;
@@ -684,13 +700,32 @@ function toggleToday(id){
   }
 }
 
-function deleteHabit(id){
+/** Toggle any past/present day from the history calendar (future days are refused). */
+function toggleDay(id, key){
+  const h = habits.find(x => x.id === id);
+  if(!h || key > todayStr(0)) return;
+  h.log[key] = !h.log[key];
+  render();
+  saveHabits();
+  const btn = document.querySelector(`.cal-day[data-date="${key}"]`);
+  if(btn) btn.focus();
+}
+
+async function deleteHabit(id){
+  const h = habits.find(x => x.id === id);
+  if(!h) return;
+  const ok = await openConfirmModal(
+    'Delete this habit?',
+    `"${h.name}" and all of its history will be permanently deleted. This cannot be undone.`,
+    'DELETE'
+  );
+  if(!ok) return;
   if(editingId === id) editingId = null;
   if(historyId === id){
     historyId = null;
     historyCursor = null;
   }
-  habits = habits.filter(h => h.id !== id);
+  habits = habits.filter(x => x.id !== id);
   render();
   saveHabits();
 }
@@ -861,12 +896,17 @@ function parseBackupPayload(text){
   });
 }
 
-function openConfirmModal(title, body){
+function openConfirmModal(title, body, confirmLabel){
+  // Resolve any modal still open so its promise never hangs
+  if(confirmResolver) closeConfirmModal(false);
   return new Promise(resolve => {
     confirmResolver = resolve;
+    modalReturnFocus = document.activeElement;
     $('confirmTitle').textContent = title;
     $('confirmBody').textContent = body;
+    $('confirmOk').textContent = confirmLabel || 'REPLACE DATA';
     $('confirmModal').hidden = false;
+    $('confirmCancel').focus(); // safe default for destructive actions
   });
 }
 
@@ -874,7 +914,27 @@ function closeConfirmModal(result){
   $('confirmModal').hidden = true;
   const resolve = confirmResolver;
   confirmResolver = null;
+  const back = modalReturnFocus;
+  modalReturnFocus = null;
+  if(back && document.contains(back) && typeof back.focus === 'function') back.focus();
   if(resolve) resolve(result);
+}
+
+/** Esc closes the modal; Tab is kept inside it. */
+function handleModalKeydown(e){
+  if($('confirmModal').hidden) return;
+  if(e.key === 'Escape'){
+    e.preventDefault();
+    closeConfirmModal(false);
+    return;
+  }
+  if(e.key === 'Tab'){
+    const items = [$('confirmCancel'), $('confirmOk')];
+    const i = items.indexOf(document.activeElement);
+    e.preventDefault();
+    const next = e.shiftKey ? (i <= 0 ? items.length - 1 : i - 1) : (i === -1 || i === items.length - 1 ? 0 : i + 1);
+    items[next].focus();
+  }
 }
 
 async function handleImportFile(file){
@@ -985,6 +1045,18 @@ function init(){
 
   $('confirmCancel').addEventListener('click', () => closeConfirmModal(false));
   $('confirmOk').addEventListener('click', () => closeConfirmModal(true));
+  document.addEventListener('keydown', handleModalKeydown);
+
+  // Re-render when the calendar day changes while the tab stays open
+  const refreshIfNewDay = () => {
+    if(renderedDay && renderedDay !== todayStr(0) && editingId === null) render();
+  };
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden) refreshIfNewDay();
+  });
+  window.addEventListener('focus', refreshIfNewDay);
+  setInterval(refreshIfNewDay, 60000);
+
   $('confirmModal').addEventListener('click', (e) => {
     if(e.target === $('confirmModal')) closeConfirmModal(false);
   });
@@ -992,7 +1064,8 @@ function init(){
   $('resetBtn').addEventListener('click', () => {
     openConfirmModal(
       'Clear all data?',
-      'This will delete all your habits and history. This cannot be undone.'
+      'This will delete all your habits and history. This cannot be undone.',
+      'DELETE ALL'
     ).then((ok) => {
       if(!ok) return;
       habits = [];
